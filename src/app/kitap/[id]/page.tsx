@@ -1,21 +1,31 @@
 import { getKatalog } from '@/lib/db'
+import { getEvvelcevapSlug, getSinifNo } from '@/lib/evvelcevap'
 import { notFound } from 'next/navigation'
 
 export default async function KitapPage({ params }: { params: Promise<{ id: string }> }) {
   const id = parseInt((await params).id)
   if (isNaN(id)) notFound()
 
-  const { uniteler, dosyalar, dersler } = getKatalog()
+  const { uniteler, dosyalar, dersler, kategoriler, siniflar } = getKatalog()
 
   const unite = uniteler.find(u => u.id === id)
   if (!unite) notFound()
 
   const uniteDosyalar = dosyalar.filter(d => d.unite_id === id)
   const ders = dersler.find(d => d.id === unite.ders_id)
+  const kategori = kategoriler.find(k => k.id === ders?.kategori_id)
+  const sinif = siniflar.find(s => s.id === unite.sinif_id)
+  const evvelcevapSlug = kategori ? getEvvelcevapSlug(kategori.baslik) : null
+  const sinifNo = sinif ? getSinifNo(sinif.baslik) : null
 
   const interactiveUrl = uniteDosyalar.find(d => d.tur === 'interactive')?.url
   const pdfUrl = uniteDosyalar.find(d => d.tur === 'pdf')?.url
   const zipUrl = uniteDosyalar.find(d => d.tur === 'zip')?.url
+
+  const okuParams = new URLSearchParams()
+  okuParams.set('url', interactiveUrl || '')
+  if (evvelcevapSlug) okuParams.set('c', evvelcevapSlug)
+  if (sinifNo) okuParams.set('s', sinifNo)
 
   return (
     <div className="container">
@@ -29,7 +39,7 @@ export default async function KitapPage({ params }: { params: Promise<{ id: stri
           <p style={{ color: '#666', marginBottom: 24 }}>{ders?.baslik}</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {interactiveUrl && (
-              <a href={`/oku?url=${encodeURIComponent(interactiveUrl)}`} className="btn-oku" style={{ padding: '12px 24px', borderRadius: 8, textAlign: 'center', textDecoration: 'none', fontWeight: 600, fontSize: 15, display: 'block' }}>
+              <a href={`/oku?${okuParams.toString()}`} className="btn-oku" style={{ padding: '12px 24px', borderRadius: 8, textAlign: 'center', textDecoration: 'none', fontWeight: 600, fontSize: 15, display: 'block' }}>
                 Etkileşimli Oku
               </a>
             )}
