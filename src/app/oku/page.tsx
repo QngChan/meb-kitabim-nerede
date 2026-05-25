@@ -60,6 +60,7 @@ function OgmViewer({ url, evvelcevapSlug }: { url: string; evvelcevapSlug: strin
 
 function ImageViewer({ iid, evvelcevapSlug }: { iid: string; evvelcevapSlug: string | null }) {
   const scrollRef = useRef<HTMLDivElement>(null)
+  const imgWrapRef = useRef<HTMLDivElement>(null)
   const drawCanvasRef = useRef<HTMLCanvasElement>(null)
   const imgRef = useRef<HTMLImageElement>(null)
   const panning = useRef(false)
@@ -67,7 +68,8 @@ function ImageViewer({ iid, evvelcevapSlug }: { iid: string; evvelcevapSlug: str
   const [pages, setPages] = useState<string[]>([])
   const [pageIdx, setPageIdx] = useState(0)
   const [scale, setScale] = useState(1)
-  const [imgSize, setImgSize] = useState({ w: 0, h: 0 })
+  const [dispW, setDispW] = useState(0)
+  const [dispH, setDispH] = useState(0)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [tool, setTool] = useState<Tool>('none')
@@ -81,6 +83,7 @@ function ImageViewer({ iid, evvelcevapSlug }: { iid: string; evvelcevapSlug: str
   const [showSearch, setShowSearch] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const startPt = useRef<{ x: number; y: number } | null>(null)
+  const naturalSize = useRef({ w: 0, h: 0 })
 
   const cevapAnahtariUrl = evvelcevapSlug
     ? `https://www.evvelcevap.com/${evvelcevapSlug}-ders-ve-calisma-kitabi-cevaplari/`
@@ -88,7 +91,30 @@ function ImageViewer({ iid, evvelcevapSlug }: { iid: string; evvelcevapSlug: str
 
   const penMode = tool === 'pen' || tool === 'eraser'
   const shapeMode = tool === 'rectangle' || tool === 'circle' || tool === 'line'
-  const activeToolCount = tool !== 'none' ? 1 : 0
+
+  const calcFitScale = useCallback((nw: number, nh: number) => {
+    const maxW = window.innerWidth - 40
+    const maxH = window.innerHeight - 130
+    return Math.min(maxW / nw, maxH / nh, 1)
+  }, [])
+
+  const applySize = useCallback((nw: number, nh: number, s: number) => {
+    setDispW(Math.round(nw * s))
+    setDispH(Math.round(nh * s))
+  }, [])
+
+  const fitToScreen = useCallback(() => {
+    const img = imgRef.current
+    if (!img) return false
+    const nw = img.naturalWidth
+    const nh = img.naturalHeight
+    if (!nw || !nh) return false
+    naturalSize.current = { w: nw, h: nh }
+    const s = calcFitScale(nw, nh)
+    setScale(s)
+    applySize(nw, nh, s)
+    return true
+  }, [calcFitScale, applySize])
 
   const thumbUrls = useRef<string[]>([])
 
@@ -118,32 +144,19 @@ function ImageViewer({ iid, evvelcevapSlug }: { iid: string; evvelcevapSlug: str
     return () => { cancelled = true }
   }, [iid])
 
-  const fitToScreen = useCallback(() => {
-    const img = imgRef.current
-    if (!img) return
-    const nw = img.naturalWidth
-    const nh = img.naturalHeight
-    if (!nw || !nh) return
-    setImgSize({ w: nw, h: nh })
-    const maxW = window.innerWidth - 40
-    const maxH = window.innerHeight - 130
-    const s = Math.min(maxW / nw, maxH / nh, 1)
-    setScale(Math.round(s * 100) / 100)
-  }, [])
-
   useEffect(() => {
     const img = imgRef.current
-    if (img?.complete) fitToScreen()
+    if (img?.complete) {
+      if (fitToScreen()) return
+    }
   }, [pageIdx, fitToScreen])
 
   useEffect(() => {
     const c = drawCanvasRef.current
-    const img = imgRef.current
-    if (!c || !img) return
-    const r = img.getBoundingClientRect()
-    c.width = r.width
-    c.height = r.height
-  }, [pageIdx, imgSize, scale, tool])
+    if (!c || !dispW) return
+    c.width = dispW
+    c.height = dispH
+  }, [dispW, dispH])
 
   const goToPage = useCallback((n: number) => {
     setPageIdx(Math.max(0, Math.min(n, pages.length - 1)))
@@ -347,26 +360,30 @@ function ImageViewer({ iid, evvelcevapSlug }: { iid: string; evvelcevapSlug: str
           background: '#f5f5f5', position: 'relative',
           cursor: panMode ? 'grab' : (panning.current ? 'grabbing' : 'default'),
         }}>
-          <div onMouseDown={startPan} onMouseMove={movePan} onMouseUp={endPan} onMouseLeave={endPan}
-            style={{ position: 'relative', alignSelf: 'center', margin: 20, transform: `scale(${scale})`, transformOrigin: 'top center' }}>
+          <div ref={imgWrapRef} onMouseDown={startPan} onMouseMove={movePan} onMouseUp={endPan} onMouseLeave={endPan}
+            style={{ position: 'relative', alignSelf: 'flex-start', margin: '20px auto' }}>
             <img
               ref={imgRef}
               src={pages[pageIdx]}
               alt={`Sayfa ${pageIdx + 1}`}
               draggable={false}
               onLoad={fitToScreen}
+              width={dispW || undefined}
+              height={dispH || undefined}
               style={{ display: 'block', boxShadow: '0 2px 8px rgba(0,0,0,0.12)', userSelect: 'none' }}
             />
-            <canvas
-              ref={drawCanvasRef}
-              style={{
-                position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
-                pointerEvents: tool === 'none' || panMode ? 'none' : 'auto',
-                cursor: tool === 'eraser' ? 'not-allowed' : 'crosshair',
-              }}
-              onMouseDown={onDrawDown} onMouseMove={onDrawMove}
-              onMouseUp={onDrawUp} onMouseLeave={onDrawUp}
-            />
+            {dispW > 0 && (
+              <canvas
+                ref={drawCanvasRef}
+                style={{
+                  position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
+                  pointerEvents: tool === 'none' || panMode ? 'none' : 'auto',
+                  cursor: tool === 'eraser' ? 'not-allowed' : 'crosshair',
+                }}
+                onMouseDown={onDrawDown} onMouseMove={onDrawMove}
+                onMouseUp={onDrawUp} onMouseLeave={onDrawUp}
+              />
+            )}
           </div>
         </div>
 
@@ -420,7 +437,7 @@ function ImageViewer({ iid, evvelcevapSlug }: { iid: string; evvelcevapSlug: str
 
           {/* Right group */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 0 }}>
-            <BarBtn active={activeToolCount > 0} onClick={() => setPanelOpen(!panelOpen)} title="Çizim Araçları">
+            <BarBtn active={tool !== 'none' || panelOpen} onClick={() => setPanelOpen(!panelOpen)} title="Çizim Araçları">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
             </BarBtn>
             <BarBtn onClick={() => setShowSearch(true)} title="Sayfaya Git">
