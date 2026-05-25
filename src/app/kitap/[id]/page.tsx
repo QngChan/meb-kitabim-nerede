@@ -21,8 +21,12 @@ export default async function KitapPage({ params }: { params: Promise<{ id: stri
   const zipUrl = uniteDosyalar.find(d => d.tur === 'zip')?.url
 
   const okuParams = new URLSearchParams()
-  okuParams.set('id', String(id))
+  okuParams.set('url', interactiveUrl || '')
   if (evvelcevapSlug) okuParams.set('c', evvelcevapSlug)
+
+  const pdfOkuParams = new URLSearchParams()
+  pdfOkuParams.set('id', String(id))
+  if (evvelcevapSlug) pdfOkuParams.set('c', evvelcevapSlug)
 
   return (
     <div className="container">
@@ -38,6 +42,11 @@ export default async function KitapPage({ params }: { params: Promise<{ id: stri
             {interactiveUrl && (
               <a href={`/oku?${okuParams.toString()}`} className="btn-oku" style={{ padding: '12px 24px', borderRadius: 8, textAlign: 'center', textDecoration: 'none', fontWeight: 600, fontSize: 15, display: 'block' }}>
                 Etkileşimli Oku
+              </a>
+            )}
+            {pdfUrl && (
+              <a href={`/oku?${pdfOkuParams.toString()}`} style={{ padding: '12px 24px', borderRadius: 8, textAlign: 'center', textDecoration: 'none', fontWeight: 600, fontSize: 15, display: 'block', background: '#f0f0ff', border: '1px solid #6366f1', color: '#6366f1' }}>
+                ✏️ PDF Okuyucu (Çizim Araçları)
               </a>
             )}
             {pdfUrl && (

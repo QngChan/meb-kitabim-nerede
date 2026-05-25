@@ -20,10 +20,35 @@ function ToolBtn({ active, onClick, title, children }: { active: boolean; onClic
   )
 }
 
-function PdfViewer() {
-  const searchParams = useSearchParams()
-  const unitId = searchParams.get('id')
-  const evvelcevapSlug = searchParams.get('c')
+function OgmViewer({ url, evvelcevapSlug }: { url: string; evvelcevapSlug: string | null }) {
+  const cevapAnahtariUrl = evvelcevapSlug
+    ? `https://www.evvelcevap.com/${evvelcevapSlug}-ders-ve-calisma-kitabi-cevaplari/`
+    : null
+
+  return (
+    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ display: 'flex', alignItems: 'center', padding: '8px 16px', background: '#fff', borderBottom: '1px solid #ddd', gap: 12, flexShrink: 0 }}>
+        <a href="javascript:history.back()" className="back-link" style={{ marginBottom: 0 }}>← Geri</a>
+        <span style={{ fontSize: 14, color: '#666' }}>Etkileşimli Kitap</span>
+      </div>
+      <iframe src={url} style={{ flex: 1, width: '100%', border: 'none' }} allowFullScreen />
+      {cevapAnahtariUrl && (
+        <a href={cevapAnahtariUrl} target="_blank" rel="noopener noreferrer" style={{
+          position: 'fixed', bottom: 24, right: 24, zIndex: 1000,
+          display: 'inline-flex', alignItems: 'center', gap: 6,
+          padding: '10px 18px', background: '#6366f1', color: '#fff',
+          borderRadius: 8, textDecoration: 'none', fontWeight: 600,
+          fontSize: 14, boxShadow: '0 4px 12px rgba(99,102,241,0.4)',
+        }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+          Cevap Anahtarı
+        </a>
+      )}
+    </div>
+  )
+}
+
+function PdfViewer({ unitId, evvelcevapSlug }: { unitId: string; evvelcevapSlug: string | null }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const drawCanvasRef = useRef<HTMLCanvasElement>(null)
   const [pdfDoc, setPdfDoc] = useState<any>(null)
@@ -113,7 +138,6 @@ function PdfViewer() {
     if (!isNaN(n)) goToPage(n)
   }
 
-  // Drawing helpers
   const getPos = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const c = drawCanvasRef.current
     if (!c) return { x: 0, y: 0 }
@@ -220,7 +244,6 @@ function PdfViewer() {
       )}
 
       <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', paddingTop: penMode ? 40 : 0, transition: 'padding-top 0.2s' }}>
-        {/* Top bar */}
         <div style={{ display: 'flex', alignItems: 'center', padding: '8px 16px', background: '#fff', borderBottom: '1px solid #ddd', gap: 12, flexShrink: 0 }}>
           <a href="javascript:history.back()" className="back-link" style={{ marginBottom: 0 }}>← Geri</a>
           <span style={{ fontSize: 14, color: '#666' }}>Sayfa {pageNum} / {totalPages}</span>
@@ -247,7 +270,6 @@ function PdfViewer() {
           </div>
         </div>
 
-        {/* PDF area */}
         <div style={{
           flex: 1, overflow: 'auto', display: 'flex', justifyContent: 'center',
           background: '#f5f5f5', position: 'relative',
@@ -272,7 +294,6 @@ function PdfViewer() {
           </div>
         </div>
 
-        {/* Bottom nav */}
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12,
           padding: '8px 16px', background: '#fff', borderTop: '1px solid #ddd', flexShrink: 0,
@@ -289,7 +310,6 @@ function PdfViewer() {
         </div>
       </div>
 
-      {/* Pen toggle button */}
       <button
         onClick={() => { setPanelOpen(!panelOpen); if (panelOpen) { setTool('none'); setShowColors(false); setShowShapes(false) } }}
         title="Kalem"
@@ -305,7 +325,6 @@ function PdfViewer() {
         </svg>
       </button>
 
-      {/* Drawing panel */}
       {panelOpen && (
         <div style={{
           position: 'fixed', left: 72, top: '50%', transform: 'translateY(-50%)', zIndex: 2000,
@@ -374,10 +393,25 @@ function PdfViewer() {
   )
 }
 
+function OkuContent() {
+  const searchParams = useSearchParams()
+  const url = searchParams.get('url')
+  const unitId = searchParams.get('id')
+  const evvelcevapSlug = searchParams.get('c')
+
+  if (unitId) {
+    return <PdfViewer unitId={unitId} evvelcevapSlug={evvelcevapSlug} />
+  }
+  if (url) {
+    return <OgmViewer url={url} evvelcevapSlug={evvelcevapSlug} />
+  }
+  return <p className="error">Geçersiz bağlantı. Lütfen bir kitap seçin.</p>
+}
+
 export default function OkuPage() {
   return (
     <Suspense fallback={<p className="loading" style={{ padding: 80 }}>Yükleniyor...</p>}>
-      <PdfViewer />
+      <OkuContent />
     </Suspense>
   )
 }
