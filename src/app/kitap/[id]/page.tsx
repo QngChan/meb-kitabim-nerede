@@ -21,7 +21,7 @@ export default async function KitapPage({ params }: { params: Promise<{ id: stri
   const zipUrl = uniteDosyalar.find(d => d.tur === 'zip')?.url
 
   const okuParams = new URLSearchParams()
-  okuParams.set('url', interactiveUrl || '')
+  okuParams.set('id', String(id))
   if (evvelcevapSlug) okuParams.set('c', evvelcevapSlug)
 
   return (
