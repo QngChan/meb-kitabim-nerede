@@ -1,0 +1,217 @@
+{
+  "turk-dili-ve-edebiyati": {
+    "9": [
+      "meb",
+      "meb-yayinlari",
+      "mesem",
+      "odev-yayinlari"
+    ],
+    "10": [
+      "besgen-yayinlari",
+      "dusler-yayincilik",
+      "meb",
+      "meb-yayinlari",
+      "mesem"
+    ],
+    "11": [
+      "ata-yayinlari",
+      "cem-yayinlari",
+      "gizem-yayinlari",
+      "mesem"
+    ],
+    "12": [
+      "meb-yayinlari",
+      "melis-yayinlari",
+      "ordinat-yayinlari"
+    ]
+  },
+  "tarih": {
+    "9": [
+      "meb-yayinlari",
+      "mesem",
+      "tuna-yayinlari"
+    ],
+    "10": [
+      "ata-yayincilik",
+      "meb-yayinlari"
+    ],
+    "11": [
+      "ata-yayincilik",
+      "dersdestek-yayinlari",
+      "meb-yayinlari"
+    ],
+    "12": [
+      "inkilap"
+    ]
+  },
+  "cografya": {
+    "9": [
+      "gun-yayinlari",
+      "meb",
+      "meb-yayinlari",
+      "tutku-yayincilik"
+    ],
+    "10": [
+      "meb-yayinlari",
+      "tutku-yayinlari",
+      "yildirim-yayinlari"
+    ],
+    "11": [
+      "gun-yayinlari",
+      "meb-yayinlari",
+      "yildirim-yayinlari"
+    ],
+    "12": [
+      "gun-yayinlari",
+      "meb-yayinlari"
+    ]
+  },
+  "matematik": {
+    "9": [
+      "ata-yayincilik",
+      "ata-yayinlari",
+      "eksen-yayincilik",
+      "gezegen-yayinlari",
+      "meb-yayinlari",
+      "meb-yayinlari-1-kitap",
+      "meb-yayinlari-2-kitap",
+      "mesem",
+      "pasifik-yayinlari"
+    ],
+    "10": [
+      "anka-yayinevi",
+      "hecce-yayinlari",
+      "meb",
+      "meb-yayinlari",
+      "mesem",
+      "miray-yayinlari"
+    ],
+    "11": [
+      "anka-yayinevi",
+      "aydin-yayinlari",
+      "meb-yayinlari",
+      "sdr-dikey-yayinlari"
+    ],
+    "12": [
+      "meb",
+      "meb-yayinlari",
+      "melis-yayinlari",
+      "ordinat-yayinlari",
+      "tutku-yayinlari"
+    ]
+  },
+  "fizik": {
+    "9": [
+      "ata-yayincilik",
+      "hecce-yayinlari",
+      "meb-yayinlari",
+      "sdr-dikey-yayincilik"
+    ],
+    "10": [
+      "ata-yayinlari",
+      "ekoyay-yayinlari",
+      "meb",
+      "meb-yayinlari"
+    ],
+    "11": [
+      "anka-yayinevi",
+      "ata-yayinlari",
+      "meb",
+      "meb-yayinlari"
+    ],
+    "12": [
+      "meb-yayinlari",
+      "yildirim-yayinlari"
+    ]
+  },
+  "kimya": {
+    "9": [
+      "evrensel-iletisim-yayinlari",
+      "hecce-yayincilik",
+      "meb-yayinlari",
+      "pasifik-yayinlari"
+    ],
+    "10": [
+      "anadol-yayincilik",
+      "ata-yayinlari",
+      "basak-yayinlari",
+      "meb-yayinlari",
+      "pasifik-yayinlari",
+      "sdr-dikey-yayinlari"
+    ],
+    "11": [
+      "e-kare-yayinlari",
+      "sdr-dikey-yayinlari"
+    ],
+    "12": [
+      "anka-yayinlari",
+      "meb-yayinlari"
+    ]
+  },
+  "biyoloji": {
+    "9": [
+      "ez-de-yayincilik",
+      "meb",
+      "meb-yayinlari",
+      "tutku-yayincilik"
+    ],
+    "10": [
+      "dortel-yayinlari",
+      "meb-yayinlari",
+      "pasifik-yayinlari",
+      "tuna-matbaacilik-yayinlari"
+    ],
+    "11": [
+      "anadol-yayincilik",
+      "meb-yayinlari",
+      "tuna-yayinlari",
+      "tutku-yayinlari"
+    ],
+    "12": [
+      "meb-yayinlari",
+      "sdr-dikey-yayinlari"
+    ]
+  },
+  "felsefe": {},
+  "ingilizce": {
+    "9": [
+      "erkad-yayincilik",
+      "erkad-yayinlari",
+      "pasifik-yayinlari"
+    ],
+    "10": [
+      "cem-yayinlari",
+      "cem-yayinlari-sari-kitap",
+      "pasifik-yayinlari"
+    ],
+    "11": [
+      "cem-yayinlari",
+      "yildirim-yayinlari"
+    ],
+    "12": [
+      "meb-yayinlari"
+    ]
+  },
+  "din-kulturu": {
+    "9": [
+      "erkad-yayincilik",
+      "meb-yayinlari",
+      "nev-yayinlari"
+    ],
+    "10": [
+      "meb-yayinlari"
+    ],
+    "11": [
+      "meb-yayinlari",
+      "sdr-ipekyolu-yayinlari"
+    ],
+    "12": [
+      "erkad-yayincilik"
+    ]
+  },
+  "almanca": {
+    "9": [
+      "meb-yayinlari"
+    ]
+  }
+}

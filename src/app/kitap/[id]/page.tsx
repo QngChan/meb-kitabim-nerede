@@ -1,12 +1,12 @@
 import { getKatalog } from '@/lib/db'
-import { getEvvelcevapSlug } from '@/lib/evvelcevap'
+import { getEvvelcevapSlug, getSinifNo, getPublishers } from '@/lib/evvelcevap'
 import { notFound } from 'next/navigation'
 
 export default async function KitapPage({ params }: { params: Promise<{ id: string }> }) {
   const id = parseInt((await params).id)
   if (isNaN(id)) notFound()
 
-  const { uniteler, dosyalar, dersler, kategoriler } = getKatalog()
+  const { uniteler, dosyalar, dersler, kategoriler, siniflar } = getKatalog()
 
   const unite = uniteler.find(u => u.id === id)
   if (!unite) notFound()
@@ -14,7 +14,9 @@ export default async function KitapPage({ params }: { params: Promise<{ id: stri
   const uniteDosyalar = dosyalar.filter(d => d.unite_id === id)
   const ders = dersler.find(d => d.id === unite.ders_id)
   const kategori = kategoriler.find(k => k.id === ders?.kategori_id)
+  const sinif = siniflar.find(s => s.id === unite.sinif_id)
   const evvelcevapSlug = kategori ? getEvvelcevapSlug(kategori.baslik) : null
+  const sinifNo = sinif ? getSinifNo(sinif.baslik) : null
 
   const interactiveUrl = uniteDosyalar.find(d => d.tur === 'interactive')?.url
   const pdfUrl = uniteDosyalar.find(d => d.tur === 'pdf')?.url
@@ -22,7 +24,14 @@ export default async function KitapPage({ params }: { params: Promise<{ id: stri
 
   const okuParams = new URLSearchParams()
   okuParams.set('url', interactiveUrl || '')
-  if (evvelcevapSlug) okuParams.set('c', evvelcevapSlug)
+  if (evvelcevapSlug) {
+    okuParams.set('c', evvelcevapSlug)
+    if (sinifNo) {
+      okuParams.set('s', sinifNo)
+      const pubs = getPublishers(evvelcevapSlug, sinifNo)
+      if (pubs.length > 0) okuParams.set('p', pubs.join(','))
+    }
+  }
 
   return (
     <div className="container">
