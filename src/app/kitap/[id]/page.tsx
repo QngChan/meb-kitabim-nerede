@@ -20,13 +20,14 @@ export default async function KitapPage({ params }: { params: Promise<{ id: stri
   const pdfUrl = uniteDosyalar.find(d => d.tur === 'pdf')?.url
   const zipUrl = uniteDosyalar.find(d => d.tur === 'zip')?.url
 
-  const okuParams = new URLSearchParams()
-  okuParams.set('url', interactiveUrl || '')
-  if (evvelcevapSlug) okuParams.set('c', evvelcevapSlug)
-
-  const pdfOkuParams = new URLSearchParams()
-  pdfOkuParams.set('id', String(id))
-  if (evvelcevapSlug) pdfOkuParams.set('c', evvelcevapSlug)
+  let okuHref = '#'
+  let isImageViewer = false
+  if (unite.id > 0) {
+    okuHref = `/oku?iid=${unite.id}${evvelcevapSlug ? `&c=${evvelcevapSlug}` : ''}`
+    isImageViewer = true
+  } else if (interactiveUrl) {
+    okuHref = `/oku?url=${encodeURIComponent(interactiveUrl)}${evvelcevapSlug ? `&c=${evvelcevapSlug}` : ''}`
+  }
 
   return (
     <div className="container">
@@ -39,14 +40,9 @@ export default async function KitapPage({ params }: { params: Promise<{ id: stri
           <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 8 }}>{unite.baslik}</h1>
           <p style={{ color: '#666', marginBottom: 24 }}>{ders?.baslik}</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {interactiveUrl && (
-              <a href={`/oku?${okuParams.toString()}`} className="btn-oku" style={{ padding: '12px 24px', borderRadius: 8, textAlign: 'center', textDecoration: 'none', fontWeight: 600, fontSize: 15, display: 'block' }}>
-                Etkileşimli Oku
-              </a>
-            )}
-            {pdfUrl && (
-              <a href={`/oku?${pdfOkuParams.toString()}`} style={{ padding: '12px 24px', borderRadius: 8, textAlign: 'center', textDecoration: 'none', fontWeight: 600, fontSize: 15, display: 'block', background: '#f0f0ff', border: '1px solid #6366f1', color: '#6366f1' }}>
-                ✏️ PDF Okuyucu (Çizim Araçları)
+            {okuHref !== '#' && (
+              <a href={okuHref} className="btn-oku" style={{ padding: '12px 24px', borderRadius: 8, textAlign: 'center', textDecoration: 'none', fontWeight: 600, fontSize: 15, display: 'block' }}>
+                {isImageViewer ? '📖 Oku' : 'Etkileşimli Oku'}
               </a>
             )}
             {pdfUrl && (

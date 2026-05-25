@@ -13,7 +13,6 @@ function ToolBtn({ active, onClick, title, children }: { active: boolean; onClic
       width: 40, height: 40, borderRadius: 8, border: active ? '2px solid #6366f1' : '1px solid #ddd',
       background: active ? '#eef2ff' : '#fff', cursor: 'pointer',
       display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: '#333',
-      transition: 'all 0.15s',
     }}>
       {children}
     </button>
@@ -29,7 +28,6 @@ function OgmViewer({ url, evvelcevapSlug }: { url: string; evvelcevapSlug: strin
     <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
       <div style={{ display: 'flex', alignItems: 'center', padding: '8px 16px', background: '#fff', borderBottom: '1px solid #ddd', gap: 12, flexShrink: 0 }}>
         <a href="javascript:history.back()" className="back-link" style={{ marginBottom: 0 }}>← Geri</a>
-        <span style={{ fontSize: 14, color: '#666' }}>Etkileşimli Kitap</span>
       </div>
       <iframe src={url} style={{ flex: 1, width: '100%', border: 'none' }} allowFullScreen />
       {cevapAnahtariUrl && (
@@ -48,13 +46,13 @@ function OgmViewer({ url, evvelcevapSlug }: { url: string; evvelcevapSlug: strin
   )
 }
 
-function PdfViewer({ unitId, evvelcevapSlug }: { unitId: string; evvelcevapSlug: string | null }) {
-  const canvasRef = useRef<HTMLCanvasElement>(null)
+function ImageViewer({ iid, evvelcevapSlug }: { iid: string; evvelcevapSlug: string | null }) {
+  const imgContainerRef = useRef<HTMLDivElement>(null)
+  const imgRef = useRef<HTMLImageElement>(null)
   const drawCanvasRef = useRef<HTMLCanvasElement>(null)
-  const [pdfDoc, setPdfDoc] = useState<any>(null)
-  const [pageNum, setPageNum] = useState(1)
-  const [totalPages, setTotalPages] = useState(0)
-  const [scale, setScale] = useState(1.2)
+  const [pages, setPages] = useState<string[]>([])
+  const [pageIdx, setPageIdx] = useState(0)
+  const [scale, setScale] = useState(1)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [query, setQuery] = useState('')
@@ -65,7 +63,6 @@ function PdfViewer({ unitId, evvelcevapSlug }: { unitId: string; evvelcevapSlug:
   const [showShapes, setShowShapes] = useState(false)
   const [panelOpen, setPanelOpen] = useState(false)
   const startPt = useRef<{ x: number; y: number } | null>(null)
-  const renderTask = useRef<any>(null)
 
   const cevapAnahtariUrl = evvelcevapSlug
     ? `https://www.evvelcevap.com/${evvelcevapSlug}-ders-ve-calisma-kitabi-cevaplari/`
@@ -75,24 +72,17 @@ function PdfViewer({ unitId, evvelcevapSlug }: { unitId: string; evvelcevapSlug:
   const shapeMode = tool === 'rectangle' || tool === 'circle' || tool === 'line'
 
   useEffect(() => {
-    if (!unitId) { setLoading(false); setError('Kitap ID bulunamadı.'); return }
     let cancelled = false
-
     async function load() {
       try {
-        const res = await fetch(`/api/pdf-url/${unitId}`)
-        if (!res.ok) throw new Error('PDF URL alınamadı')
-        const { proxyUrl } = await res.json()
-        if (!proxyUrl) throw new Error('Bu kitap için PDF bulunamadı')
-
-        const pdfjsLib = await import('pdfjs-dist')
-        pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs'
-
-        const loadingTask = pdfjsLib.getDocument(proxyUrl)
-        const pdf = await loadingTask.promise
+        const res = await fetch(`/api/sayfalar/${iid}`)
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}))
+          throw new Error(data.error || 'Sayfalar yüklenemedi')
+        }
+        const data = await res.json()
         if (cancelled) return
-        setPdfDoc(pdf)
-        setTotalPages(pdf.numPages)
+        setPages(data.pages)
         setLoading(false)
       } catch (err: any) {
         if (!cancelled) { setError(err.message); setLoading(false) }
@@ -100,42 +90,26 @@ function PdfViewer({ unitId, evvelcevapSlug }: { unitId: string; evvelcevapSlug:
     }
     load()
     return () => { cancelled = true }
-  }, [unitId])
+  }, [iid])
 
   useEffect(() => {
-    if (!pdfDoc) return
-    const prevTask = renderTask.current
-    if (prevTask) prevTask.cancel()
-    const canvas = canvasRef.current
-    if (!canvas) return
-
-    ;(async () => {
-      try {
-        const page = await pdfDoc.getPage(pageNum)
-        const viewport = page.getViewport({ scale })
-        const cvs = canvas
-        cvs.width = viewport.width
-        cvs.height = viewport.height
-        const ctx = cvs.getContext('2d')
-        if (!ctx) return
-        const task = page.render({ canvasContext: ctx, viewport })
-        renderTask.current = task
-        await task.promise
-      } catch (err: any) {
-        if (err?.name !== 'RenderingCancelledException') console.error(err)
-      }
-    })()
-  }, [pdfDoc, pageNum, scale])
+    const c = drawCanvasRef.current
+    if (!c) return
+    const container = c.parentElement
+    if (!container) return
+    const rect = container.getBoundingClientRect()
+    c.width = rect.width
+    c.height = rect.height
+  }, [pageIdx, scale, pages])
 
   const goToPage = (n: number) => {
-    const p = Math.max(1, Math.min(n, totalPages))
-    setPageNum(p)
+    setPageIdx(Math.max(0, Math.min(n, pages.length - 1)))
   }
 
   const handleJump = (e: React.FormEvent) => {
     e.preventDefault()
     const n = parseInt(query)
-    if (!isNaN(n)) goToPage(n)
+    if (!isNaN(n)) goToPage(n - 1)
   }
 
   const getPos = (e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -224,12 +198,23 @@ function PdfViewer({ unitId, evvelcevapSlug }: { unitId: string; evvelcevapSlug:
 
   const selectShape = (s: Tool) => { setTool(s); setShowShapes(false); setShowColors(false) }
 
+  const handleImgLoad = () => {
+    const c = drawCanvasRef.current
+    if (!c) return
+    const container = c.parentElement
+    if (!container) return
+    const rect = container.getBoundingClientRect()
+    c.width = rect.width
+    c.height = rect.height
+  }
+
   if (error) return <p className="error">{error}</p>
   if (loading) return (
     <div className="container" style={{ textAlign: 'center', padding: 80 }}>
       <p className="loading">Kitap yükleniyor...</p>
     </div>
   )
+  if (pages.length === 0) return <p className="error">Bu kitapta sayfa bulunamadı.</p>
 
   return (
     <>
@@ -244,12 +229,15 @@ function PdfViewer({ unitId, evvelcevapSlug }: { unitId: string; evvelcevapSlug:
       )}
 
       <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', paddingTop: penMode ? 40 : 0, transition: 'padding-top 0.2s' }}>
-        <div style={{ display: 'flex', alignItems: 'center', padding: '8px 16px', background: '#fff', borderBottom: '1px solid #ddd', gap: 12, flexShrink: 0 }}>
+        <div style={{
+          display: 'flex', alignItems: 'center', padding: '8px 16px',
+          background: '#fff', borderBottom: '1px solid #ddd', gap: 12, flexShrink: 0,
+        }}>
           <a href="javascript:history.back()" className="back-link" style={{ marginBottom: 0 }}>← Geri</a>
-          <span style={{ fontSize: 14, color: '#666' }}>Sayfa {pageNum} / {totalPages}</span>
+          <span style={{ fontSize: 14, color: '#666' }}>Sayfa {pageIdx + 1} / {pages.length}</span>
 
           <form onSubmit={handleJump} style={{ display: 'flex', gap: 4, marginLeft: 8 }}>
-            <input type="number" min={1} max={totalPages} placeholder="Git..."
+            <input type="number" min={1} max={pages.length} placeholder="Git..."
               value={query} onChange={e => setQuery(e.target.value)}
               style={{ width: 60, padding: '4px 8px', borderRadius: 6, border: '1px solid #ddd', fontSize: 13, outline: 'none' }}
             />
@@ -276,8 +264,19 @@ function PdfViewer({ unitId, evvelcevapSlug }: { unitId: string; evvelcevapSlug:
           boxShadow: penMode ? '0 0 0 4px #6366f1 inset' : 'none',
           transition: 'box-shadow 0.2s',
         }}>
-          <div style={{ position: 'relative', alignSelf: 'flex-start', margin: '20px auto' }}>
-            <canvas ref={canvasRef} style={{ display: 'block', boxShadow: '0 2px 8px rgba(0,0,0,0.12)' }} />
+          <div ref={imgContainerRef} style={{ position: 'relative', alignSelf: 'flex-start', margin: '20px auto' }}>
+            <img
+              ref={imgRef}
+              src={pages[pageIdx]}
+              alt={`Sayfa ${pageIdx + 1}`}
+              onLoad={handleImgLoad}
+              style={{
+                display: 'block', maxWidth: '100%',
+                transform: `scale(${scale})`,
+                transformOrigin: 'top left',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
+              }}
+            />
             <canvas
               ref={drawCanvasRef}
               style={{
@@ -286,8 +285,6 @@ function PdfViewer({ unitId, evvelcevapSlug }: { unitId: string; evvelcevapSlug:
                 cursor: tool === 'eraser' ? 'not-allowed' : 'crosshair',
                 boxShadow: penMode ? '0 0 0 2px #6366f1' : 'none',
               }}
-              width={canvasRef.current?.width || 0}
-              height={canvasRef.current?.height || 0}
               onMouseDown={onDrawDown} onMouseMove={onDrawMove}
               onMouseUp={onDrawUp} onMouseLeave={onDrawUp}
             />
@@ -298,14 +295,14 @@ function PdfViewer({ unitId, evvelcevapSlug }: { unitId: string; evvelcevapSlug:
           display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12,
           padding: '8px 16px', background: '#fff', borderTop: '1px solid #ddd', flexShrink: 0,
         }}>
-          <button onClick={() => goToPage(pageNum - 1)} disabled={pageNum <= 1} style={{
+          <button onClick={() => goToPage(pageIdx - 1)} disabled={pageIdx <= 0} style={{
             padding: '6px 14px', borderRadius: 6, border: '1px solid #ddd',
-            background: '#fff', cursor: pageNum <= 1 ? 'default' : 'pointer', opacity: pageNum <= 1 ? 0.4 : 1,
+            background: '#fff', cursor: pageIdx <= 0 ? 'default' : 'pointer', opacity: pageIdx <= 0 ? 0.4 : 1,
           }}>◀ Önceki</button>
-          <span style={{ fontSize: 13, color: '#666' }}>{pageNum} / {totalPages}</span>
-          <button onClick={() => goToPage(pageNum + 1)} disabled={pageNum >= totalPages} style={{
+          <span style={{ fontSize: 13, color: '#666' }}>{pageIdx + 1} / {pages.length}</span>
+          <button onClick={() => goToPage(pageIdx + 1)} disabled={pageIdx >= pages.length - 1} style={{
             padding: '6px 14px', borderRadius: 6, border: '1px solid #ddd',
-            background: '#fff', cursor: pageNum >= totalPages ? 'default' : 'pointer', opacity: pageNum >= totalPages ? 0.4 : 1,
+            background: '#fff', cursor: pageIdx >= pages.length - 1 ? 'default' : 'pointer', opacity: pageIdx >= pages.length - 1 ? 0.4 : 1,
           }}>Sonraki ▶</button>
         </div>
       </div>
@@ -395,12 +392,12 @@ function PdfViewer({ unitId, evvelcevapSlug }: { unitId: string; evvelcevapSlug:
 
 function OkuContent() {
   const searchParams = useSearchParams()
+  const iid = searchParams.get('iid')
   const url = searchParams.get('url')
-  const unitId = searchParams.get('id')
   const evvelcevapSlug = searchParams.get('c')
 
-  if (unitId) {
-    return <PdfViewer unitId={unitId} evvelcevapSlug={evvelcevapSlug} />
+  if (iid) {
+    return <ImageViewer iid={iid} evvelcevapSlug={evvelcevapSlug} />
   }
   if (url) {
     return <OgmViewer url={url} evvelcevapSlug={evvelcevapSlug} />
