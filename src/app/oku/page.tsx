@@ -66,7 +66,7 @@ function ImageViewer({ iid, evvelcevapSlug }: { iid: string; evvelcevapSlug: str
   const panStart = useRef({ x: 0, y: 0, sx: 0, sy: 0 })
   const [pages, setPages] = useState<string[]>([])
   const [pageIdx, setPageIdx] = useState(0)
-  const [scale, setScale] = useState(0)
+  const [scale, setScale] = useState(1)
   const [imgSize, setImgSize] = useState({ w: 0, h: 0 })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -340,21 +340,16 @@ function ImageViewer({ iid, evvelcevapSlug }: { iid: string; evvelcevapSlug: str
         }}>
           <div style={{ position: 'relative', alignSelf: 'flex-start', margin: 'auto', top: 0 }}
             onMouseDown={startPan} onMouseMove={movePan} onMouseUp={endPan} onMouseLeave={endPan}>
-            {imgSize.w > 0 && (
+            {imgSize.w > 0 ? (
               <>
                 <img
                   ref={imgRef}
                   src={pages[pageIdx]}
                   alt={`Sayfa ${pageIdx + 1}`}
                   draggable={false}
-                  onLoad={imgSize.w ? undefined : handleImgLoad}
                   width={Math.round(imgSize.w * scale)}
                   height={Math.round(imgSize.h * scale)}
-                  style={{
-                    display: 'block',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
-                    userSelect: 'none',
-                  }}
+                  style={{ display: 'block', boxShadow: '0 2px 8px rgba(0,0,0,0.12)', userSelect: 'none' }}
                 />
                 <canvas
                   ref={drawCanvasRef}
@@ -369,6 +364,13 @@ function ImageViewer({ iid, evvelcevapSlug }: { iid: string; evvelcevapSlug: str
                   onMouseUp={onDrawUp} onMouseLeave={onDrawUp}
                 />
               </>
+            ) : (
+              <img
+                src={pages[pageIdx]}
+                alt={`Sayfa ${pageIdx + 1}`}
+                onLoad={handleImgLoad}
+                style={{ display: 'block', maxWidth: '95vw', maxHeight: 'calc(100vh - 140px)', boxShadow: '0 2px 8px rgba(0,0,0,0.12)' }}
+              />
             )}
           </div>
         </div>
