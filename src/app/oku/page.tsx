@@ -353,10 +353,10 @@ function ImageViewer({ iid, evvelcevapSlug }: { iid: string; evvelcevapSlug: str
         </div>
       )}
 
-      <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ height: '100vh', overflow: 'hidden' }}>
         {/* Scrollable page area */}
         <div ref={scrollRef} style={{
-          flex: 1, minHeight: 0, overflow: 'auto', display: 'flex', justifyContent: 'center',
+          height: 'calc(100vh - 52px)', overflow: 'auto', display: 'flex', justifyContent: 'center',
           background: '#f5f5f5', position: 'relative',
           cursor: panMode ? 'grab' : (panning.current ? 'grabbing' : 'default'),
         }}>
