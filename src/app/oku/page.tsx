@@ -118,23 +118,32 @@ function ImageViewer({ iid, evvelcevapSlug }: { iid: string; evvelcevapSlug: str
     return () => { cancelled = true }
   }, [iid])
 
-  useEffect(() => {
-    const c = drawCanvasRef.current
-    if (!c || !imgSize.w) return
-    c.width = imgSize.w * (scale || 1)
-    c.height = imgSize.h * (scale || 1)
-  }, [pageIdx, imgSize, scale])
-
-  const handleImgLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
-    const img = e.currentTarget
+  const fitToScreen = useCallback(() => {
+    const img = imgRef.current
+    if (!img) return
     const nw = img.naturalWidth
     const nh = img.naturalHeight
+    if (!nw || !nh) return
     setImgSize({ w: nw, h: nh })
     const maxW = window.innerWidth - 40
     const maxH = window.innerHeight - 130
     const s = Math.min(maxW / nw, maxH / nh, 1)
     setScale(Math.round(s * 100) / 100)
-  }
+  }, [])
+
+  useEffect(() => {
+    const img = imgRef.current
+    if (img?.complete) fitToScreen()
+  }, [pageIdx, fitToScreen])
+
+  useEffect(() => {
+    const c = drawCanvasRef.current
+    const img = imgRef.current
+    if (!c || !img) return
+    const r = img.getBoundingClientRect()
+    c.width = r.width
+    c.height = r.height
+  }, [pageIdx, imgSize, scale, tool])
 
   const goToPage = useCallback((n: number) => {
     setPageIdx(Math.max(0, Math.min(n, pages.length - 1)))
@@ -331,47 +340,33 @@ function ImageViewer({ iid, evvelcevapSlug }: { iid: string; evvelcevapSlug: str
         </div>
       )}
 
-      <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', paddingTop: penMode ? 40 : 0, transition: 'padding-top 0.2s' }}>
+      <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
         {/* Scrollable page area */}
         <div ref={scrollRef} style={{
-          flex: 1, overflow: 'auto', display: 'flex', justifyContent: 'center',
+          flex: 1, minHeight: 0, overflow: 'auto', display: 'flex', justifyContent: 'center',
           background: '#f5f5f5', position: 'relative',
           cursor: panMode ? 'grab' : (panning.current ? 'grabbing' : 'default'),
         }}>
-          <div style={{ position: 'relative', alignSelf: 'flex-start', margin: 'auto', top: 0 }}
-            onMouseDown={startPan} onMouseMove={movePan} onMouseUp={endPan} onMouseLeave={endPan}>
-            {imgSize.w > 0 ? (
-              <>
-                <img
-                  ref={imgRef}
-                  src={pages[pageIdx]}
-                  alt={`Sayfa ${pageIdx + 1}`}
-                  draggable={false}
-                  width={Math.round(imgSize.w * scale)}
-                  height={Math.round(imgSize.h * scale)}
-                  style={{ display: 'block', boxShadow: '0 2px 8px rgba(0,0,0,0.12)', userSelect: 'none' }}
-                />
-                <canvas
-                  ref={drawCanvasRef}
-                  style={{
-                    position: 'absolute', top: 0, left: 0,
-                    width: Math.round(imgSize.w * scale) + 'px',
-                    height: Math.round(imgSize.h * scale) + 'px',
-                    pointerEvents: tool === 'none' || panMode ? 'none' : 'auto',
-                    cursor: tool === 'eraser' ? 'not-allowed' : 'crosshair',
-                  }}
-                  onMouseDown={onDrawDown} onMouseMove={onDrawMove}
-                  onMouseUp={onDrawUp} onMouseLeave={onDrawUp}
-                />
-              </>
-            ) : (
-              <img
-                src={pages[pageIdx]}
-                alt={`Sayfa ${pageIdx + 1}`}
-                onLoad={handleImgLoad}
-                style={{ display: 'block', maxWidth: '95vw', maxHeight: 'calc(100vh - 140px)', boxShadow: '0 2px 8px rgba(0,0,0,0.12)' }}
-              />
-            )}
+          <div onMouseDown={startPan} onMouseMove={movePan} onMouseUp={endPan} onMouseLeave={endPan}
+            style={{ position: 'relative', alignSelf: 'center', margin: 20, transform: `scale(${scale})`, transformOrigin: 'top center' }}>
+            <img
+              ref={imgRef}
+              src={pages[pageIdx]}
+              alt={`Sayfa ${pageIdx + 1}`}
+              draggable={false}
+              onLoad={fitToScreen}
+              style={{ display: 'block', boxShadow: '0 2px 8px rgba(0,0,0,0.12)', userSelect: 'none' }}
+            />
+            <canvas
+              ref={drawCanvasRef}
+              style={{
+                position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
+                pointerEvents: tool === 'none' || panMode ? 'none' : 'auto',
+                cursor: tool === 'eraser' ? 'not-allowed' : 'crosshair',
+              }}
+              onMouseDown={onDrawDown} onMouseMove={onDrawMove}
+              onMouseUp={onDrawUp} onMouseLeave={onDrawUp}
+            />
           </div>
         </div>
 
