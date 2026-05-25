@@ -20,7 +20,8 @@ function Reader() {
     if (!trimmed || !url) return
     const num = parseInt(trimmed)
     if (!isNaN(num) && num > 0) {
-      const src = url.includes('?') ? `${url}&page=${num}` : `${url}?page=${num}`
+      const pageIndex = num - 1
+      const src = url.split('#')[0] + `#page-${pageIndex}`
       if (iframeRef.current) iframeRef.current.src = src
     }
   }
@@ -37,7 +38,7 @@ function Reader() {
         <form onSubmit={handleSearch} style={{ display: 'flex', gap: 4 }}>
           <input
             type="text"
-            placeholder="Sayfa no ara..."
+            placeholder="Sayfa atla..."
             value={query}
             onChange={e => setQuery(e.target.value)}
             style={{
