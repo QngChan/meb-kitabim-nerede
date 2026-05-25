@@ -69,7 +69,11 @@ export function extractUnits(html: string, dersId: number, sinifId: number) {
       if (match) unitId = parseInt(match[1])
     })
 
-    if (unitId > 0) {
+    if (unitId === 0) {
+      unitId = -(dersId * 1000 + i + 1)
+    }
+
+    if (unitId !== 0) {
       units.push({
         id: unitId,
         baslik: ribbon,
@@ -94,9 +98,10 @@ export function extractFiles(html: string, unitId: number) {
     links.each((__, link) => {
       const href = $(link).attr('href') || ''
 
-      if (href.includes('EKitapUniteOnizle.aspx')) {
+      if (href.includes('EKitapUniteOnizle.aspx') || href.match(/\/index\.html?$/)) {
         const url = href.startsWith('http') ? href : `${BASE}${href.startsWith('/') ? '' : '/'}${href}`
-        files.push({ id: ++fileId, unite_id: unitId, tur: 'interactive', url })
+        const tur = href.match(/\/index\.html?$/) ? 'interactive' : 'interactive'
+        files.push({ id: ++fileId, unite_id: unitId, tur, url })
       } else if (href.endsWith('.pdf')) {
         files.push({ id: ++fileId, unite_id: unitId, tur: 'pdf', url: href })
       } else if (href.endsWith('.zip')) {

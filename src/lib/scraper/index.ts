@@ -40,6 +40,27 @@ export async function scrapeAll() {
       const res = await api.get(`/etkilesimli-kitaplar/${sub.slug}`)
       const grades = extractGrades(res.data)
 
+      const ders = katalog.dersler.find(d => d.slug === sub.slug)
+      if (!ders) return
+
+      if (grades.length === 0) {
+        const units = extractUnits(res.data, ders.id, 0)
+        for (const unit of units) {
+          katalog.uniteler.push({
+            id: unit.id, baslik: unit.baslik, sira: unit.sira,
+            kapak_url: unit.kapak_url, ders_id: unit.ders_id, sinif_id: unit.sinif_id
+          })
+          const files = extractFiles(res.data, unit.id)
+          for (const file of files) {
+            katalog.dosyalar.push({
+              id: file.id, unite_id: file.unite_id,
+              tur: file.tur, url: file.url,
+              cache_durumu: 'none', boyut: null
+            })
+          }
+        }
+      }
+
       for (const grade of grades) {
         if (!seenSinifIds.has(grade.id)) {
           seenSinifIds.add(grade.id)
@@ -49,9 +70,6 @@ export async function scrapeAll() {
             sira: grade.id
           })
         }
-
-        const ders = katalog.dersler.find(d => d.slug === sub.slug)
-        if (!ders) continue
 
         const unitRes = await api.get(`/etkilesimli-kitap/${sub.slug}?s=${grade.id}&d=${grade.d}&u=0&k=0`)
         const units = extractUnits(unitRes.data, ders.id, grade.id)
