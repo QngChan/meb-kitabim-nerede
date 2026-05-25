@@ -1,5 +1,5 @@
 import { getKatalog } from '@/lib/db'
-import { getEvvelcevapSlug, getSinifNo, getPublishers } from '@/lib/evvelcevap'
+import { getEvvelcevapSlug, getSinifNo } from '@/lib/evvelcevap'
 import { notFound } from 'next/navigation'
 
 export default async function KitapPage({ params }: { params: Promise<{ id: string }> }) {
@@ -24,14 +24,8 @@ export default async function KitapPage({ params }: { params: Promise<{ id: stri
 
   const okuParams = new URLSearchParams()
   okuParams.set('url', interactiveUrl || '')
-  if (evvelcevapSlug) {
-    okuParams.set('c', evvelcevapSlug)
-    if (sinifNo) {
-      okuParams.set('s', sinifNo)
-      const pubs = getPublishers(evvelcevapSlug, sinifNo)
-      if (pubs.length > 0) okuParams.set('p', pubs.join(','))
-    }
-  }
+  if (evvelcevapSlug) okuParams.set('c', evvelcevapSlug)
+  if (sinifNo) okuParams.set('s', sinifNo)
 
   return (
     <div className="container">

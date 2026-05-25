@@ -1,25 +1,33 @@
 'use client'
 
 import { useSearchParams } from 'next/navigation'
-import { Suspense, useState } from 'react'
+import { Suspense, useState, useEffect } from 'react'
+
+const STORAGE_KEY = 'evvelcevap-publisher'
 
 function Reader() {
   const searchParams = useSearchParams()
   const url = searchParams.get('url')
   const evvelcevapSlug = searchParams.get('c')
   const sinifNo = searchParams.get('s')
-  const publishersParam = searchParams.get('p')
 
   const [sayfa, setSayfa] = useState('')
-  const [selectedPublisher, setSelectedPublisher] = useState('')
+  const [publisher, setPublisher] = useState('')
 
-  const publishers = publishersParam ? publishersParam.split(',') : []
-  const hasEvvelcevap = !!evvelcevapSlug && !!sinifNo && publishers.length > 0
-  const activePublisher = selectedPublisher || publishers[0] || ''
+  useEffect(() => {
+    const saved = localStorage.getItem(STORAGE_KEY)
+    if (saved) setPublisher(saved)
+  }, [])
+
+  useEffect(() => {
+    if (publisher) localStorage.setItem(STORAGE_KEY, publisher)
+  }, [publisher])
+
+  const hasEvvelcevap = !!evvelcevapSlug && !!sinifNo
 
   const cevapAnahtariUrl = hasEvvelcevap
-    ? sayfa && /^\d+$/.test(sayfa) && activePublisher
-      ? `https://www.evvelcevap.com/${sinifNo}-sinif-${activePublisher}-${evvelcevapSlug}-ders-kitabi-sayfa-${sayfa}-cevabi/`
+    ? sayfa && /^\d+$/.test(sayfa) && publisher
+      ? `https://www.evvelcevap.com/${sinifNo}-sinif-${publisher}-${evvelcevapSlug}-ders-kitabi-sayfa-${sayfa}-cevabi/`
       : `https://www.evvelcevap.com/${evvelcevapSlug}-ders-ve-calisma-kitabi-cevaplari/`
     : evvelcevapSlug
       ? `https://www.evvelcevap.com/${evvelcevapSlug}-ders-ve-calisma-kitabi-cevaplari/`
@@ -44,7 +52,7 @@ function Reader() {
       {cevapAnahtariUrl && (
         <div style={{
           position: 'fixed',
-          bottom: 96,
+          bottom: 80,
           right: 24,
           zIndex: 1000,
           display: 'flex',
@@ -52,42 +60,35 @@ function Reader() {
           gap: 6,
           alignItems: 'stretch',
         }}>
-          {hasEvvelcevap && publishers.length > 1 && (
-            <select
-              value={selectedPublisher}
-              onChange={e => setSelectedPublisher(e.target.value)}
-              style={{
-                padding: '6px 10px',
-                borderRadius: 6,
-                border: '1px solid #ddd',
-                fontSize: 12,
-                outline: 'none',
-                background: '#fff',
-              }}
-            >
-              <option value="">Yayınevi seçin</option>
-              {publishers.map(p => (
-                <option key={p} value={p}>{p.replace(/-/g, ' ')}</option>
-              ))}
-            </select>
-          )}
-          {hasEvvelcevap && (
-            <input
-              type="number"
-              min="1"
-              placeholder="Sayfa no"
-              value={sayfa}
-              onChange={e => setSayfa(e.target.value)}
-              style={{
-                padding: '8px 10px',
-                borderRadius: 6,
-                border: '1px solid #ddd',
-                fontSize: 13,
-                outline: 'none',
-                width: 'auto',
-              }}
-            />
-          )}
+          <input
+            type="text"
+            placeholder="Yayınevi (meb-yayinlari)"
+            value={publisher}
+            onChange={e => setPublisher(e.target.value)}
+            style={{
+              padding: '8px 10px',
+              borderRadius: 6,
+              border: '1px solid #ddd',
+              fontSize: 12,
+              outline: 'none',
+              width: 'auto',
+            }}
+          />
+          <input
+            type="number"
+            min="1"
+            placeholder="Sayfa no"
+            value={sayfa}
+            onChange={e => setSayfa(e.target.value)}
+            style={{
+              padding: '8px 10px',
+              borderRadius: 6,
+              border: '1px solid #ddd',
+              fontSize: 13,
+              outline: 'none',
+              width: 'auto',
+            }}
+          />
           <a
             href={cevapAnahtariUrl}
             target="_blank"
