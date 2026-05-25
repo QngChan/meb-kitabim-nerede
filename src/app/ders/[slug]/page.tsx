@@ -1,8 +1,17 @@
 import { getKatalog } from '@/lib/db'
 import { notFound } from 'next/navigation'
 
-export default async function DersPage({ params }: { params: Promise<{ slug: string }> }) {
+export default async function DersPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ slug: string }>
+  searchParams: Promise<{ sinif?: string }>
+}) {
   const slug = (await params).slug
+  const { sinif } = await searchParams
+  const sinifFiltre = sinif ? parseInt(sinif) : null
+
   const { dersler, siniflar, uniteler } = getKatalog()
 
   const ders = dersler.find(d => d.slug === slug)
@@ -10,7 +19,11 @@ export default async function DersPage({ params }: { params: Promise<{ slug: str
 
   const sinifIds = [...new Set(uniteler.filter(u => u.ders_id === ders.id).map(u => u.sinif_id).filter(Boolean))]
   const ilgiliSiniflar = siniflar.filter(s => sinifIds.includes(s.id))
-  const ilgiliUniteler = uniteler.filter(u => u.ders_id === ders.id)
+  let ilgiliUniteler = uniteler.filter(u => u.ders_id === ders.id)
+
+  if (sinifFiltre) {
+    ilgiliUniteler = ilgiliUniteler.filter(u => u.sinif_id === sinifFiltre)
+  }
 
   return (
     <div className="container">
@@ -18,14 +31,14 @@ export default async function DersPage({ params }: { params: Promise<{ slug: str
       <h1 className="section-title">{ders.baslik}</h1>
       {ilgiliSiniflar.length > 0 && (
         <div className="grade-tabs">
-          <a href={`/ders/${slug}`} className="grade-tab active">Tümü</a>
+          <a href={`/ders/${slug}`} className={`grade-tab ${!sinifFiltre ? 'active' : ''}`}>Tümü</a>
           {ilgiliSiniflar.map((s) => (
-            <a key={s.id} href={`/ders/${slug}?sinif=${s.id}`} className="grade-tab">{s.baslik}</a>
+            <a key={s.id} href={`/ders/${slug}?sinif=${s.id}`} className={`grade-tab ${sinifFiltre === s.id ? 'active' : ''}`}>{s.baslik}</a>
           ))}
         </div>
       )}
       {ilgiliUniteler.length === 0 ? (
-        <p className="loading">Bu ders için ünite bulunamadı.</p>
+        <p className="loading">Bu sınıf için ünite bulunamadı.</p>
       ) : (
         <div className="unit-grid">
           {ilgiliUniteler.map((u) => (
