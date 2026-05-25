@@ -7,19 +7,6 @@ type Tool = 'none' | 'pen' | 'eraser' | 'rectangle' | 'circle' | 'line'
 
 const COLORS = ['#000000', '#ff0000', '#0000ff', '#00cc00', '#ff9900', '#9933ff', '#ff00ff', '#00cccc']
 
-function ToolBtn({ active, onClick, title, children }: { active: boolean; onClick: () => void; title: string; children: React.ReactNode }) {
-  return (
-    <button onClick={onClick} title={title} style={{
-      width: 40, height: 40, borderRadius: 8, border: active ? '2px solid #6366f1' : '1px solid #ddd',
-      background: active ? '#eef2ff' : '#fff', cursor: 'pointer',
-      display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: '#333',
-      transition: 'all 0.15s',
-    }}>
-      {children}
-    </button>
-  )
-}
-
 function Reader() {
   const searchParams = useSearchParams()
   const url = searchParams.get('url')
@@ -33,6 +20,7 @@ function Reader() {
   const [iframeKey, setIframeKey] = useState(0)
   const [showColors, setShowColors] = useState(false)
   const [showShapes, setShowShapes] = useState(false)
+  const [panelOpen, setPanelOpen] = useState(false)
   const startPt = useRef<{ x: number; y: number } | null>(null)
 
   const cevapAnahtariUrl = evvelcevapSlug
@@ -123,6 +111,22 @@ function Reader() {
     startPt.current = null
   }
 
+  const clearCanvas = () => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+    ctx.clearRect(0, 0, canvas.width, canvas.height)
+  }
+
+  const resetAll = () => {
+    clearCanvas()
+    setIframeKey(k => k + 1)
+    setTool('none')
+    setShowColors(false)
+    setShowShapes(false)
+  }
+
   const togglePen = () => {
     if (tool === 'pen') { setTool('none'); setShowColors(false); return }
     setTool('pen'); setShowColors(true); setShowShapes(false)
@@ -182,7 +186,7 @@ function Reader() {
 
         {cevapAnahtariUrl && (
           <a href={cevapAnahtariUrl} target="_blank" rel="noopener noreferrer" style={{
-            position: 'fixed', bottom: 72, right: 24, zIndex: 1000,
+            position: 'fixed', bottom: 24, right: 24, zIndex: 1000,
             display: 'inline-flex', alignItems: 'center', gap: 6,
             padding: '10px 18px', background: '#6366f1', color: '#fff',
             borderRadius: 8, textDecoration: 'none', fontWeight: 600,
@@ -195,48 +199,80 @@ function Reader() {
             Cevap Anahtarı
           </a>
         )}
+      </div>
 
+      {/* Floating pen toggle button on left */}
+      <button
+        onClick={() => { setPanelOpen(!panelOpen); if (panelOpen) { setTool('none'); setShowColors(false); setShowShapes(false) } }}
+        title={panelOpen ? 'Kapat' : 'Kalem'}
+        style={{
+          position: 'fixed', left: 16, top: '50%', transform: 'translateY(-50%)', zIndex: 2000,
+          width: 44, height: 44, borderRadius: '50%', border: penMode ? '2px solid #6366f1' : '1px solid #ddd',
+          background: penMode ? '#eef2ff' : '#fff', cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#333',
+        }}
+      >
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/>
+        </svg>
+      </button>
+
+      {/* Floating panel */}
+      {panelOpen && (
         <div style={{
-          position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 1000,
-          background: '#fff', borderTop: '1px solid #ddd',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          padding: '8px 16px', gap: 6, height: 56,
+          position: 'fixed', left: 72, top: '50%', transform: 'translateY(-50%)', zIndex: 2000,
+          background: '#fff', borderRadius: 12, border: '1px solid #e0e0e0', boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+          padding: '10px', display: 'flex', flexDirection: 'column', gap: 6, minWidth: 48, alignItems: 'center',
         }}>
-          <ToolBtn active={tool === 'pen'} onClick={togglePen} title="Kalem">
+          {/* Pen */}
+          <button onClick={togglePen} title="Kalem" style={{
+            width: 40, height: 40, borderRadius: 8, border: tool === 'pen' ? '2px solid #6366f1' : '1px solid #ddd',
+            background: tool === 'pen' ? '#eef2ff' : '#fff', cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#333',
+          }}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/>
             </svg>
-          </ToolBtn>
+          </button>
 
           {showColors && (
-            <div style={{ display: 'flex', gap: 3, alignItems: 'center', padding: '0 4px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 3, alignItems: 'center' }}>
               {COLORS.map(c => (
                 <button key={c} onClick={() => setColor(c)} title={c} style={{
-                  width: 22, height: 22, borderRadius: '50%', background: c, cursor: 'pointer',
+                  width: 20, height: 20, borderRadius: '50%', background: c, cursor: 'pointer', padding: 0,
                   border: color === c ? '2px solid #6366f1' : '2px solid #e0e0e0',
-                  padding: 0, outline: 'none',
                 }} />
               ))}
             </div>
           )}
 
-          <ToolBtn active={tool === 'eraser'} onClick={toggleEraser} title="Silgi">
+          {/* Eraser */}
+          <button onClick={toggleEraser} title="Silgi" style={{
+            width: 40, height: 40, borderRadius: 8, border: tool === 'eraser' ? '2px solid #6366f1' : '1px solid #ddd',
+            background: tool === 'eraser' ? '#eef2ff' : '#fff', cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#333',
+          }}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M20 20H7L3 16c-.8-.8-.8-2 0-2.8L14.6 1.6a2 2 0 0 1 2.8 0L21 5.2a2 2 0 0 1 0 2.8L12 17"/>
             </svg>
-          </ToolBtn>
+          </button>
 
+          {/* Shapes */}
           <div style={{ position: 'relative' }}>
-            <ToolBtn active={shapeMode} onClick={() => { setShowShapes(!showShapes); setShowColors(false) }} title="Şekiller">
+            <button onClick={() => { setShowShapes(!showShapes); setShowColors(false) }} title="Şekiller" style={{
+              width: 40, height: 40, borderRadius: 8, border: shapeMode ? '2px solid #6366f1' : '1px solid #ddd',
+              background: shapeMode ? '#eef2ff' : '#fff', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#333',
+            }}>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <rect x="3" y="3" width="7" height="7"/><circle cx="17.5" cy="9.5" r="3.5"/><path d="M5 16 9 20M9 16 5 20"/>
               </svg>
-            </ToolBtn>
+            </button>
             {showShapes && (
               <div style={{
-                position: 'absolute', bottom: '100%', left: '50%', transform: 'translateX(-50%)',
-                background: '#fff', border: '1px solid #ddd', borderRadius: 8, padding: 4,
-                display: 'flex', gap: 4, marginBottom: 6, boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                position: 'absolute', left: '100%', top: '50%', transform: 'translateY(-50%)',
+                marginLeft: 8, background: '#fff', border: '1px solid #ddd', borderRadius: 8,
+                padding: 4, display: 'flex', gap: 4, boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
               }}>
                 {([
                   ['rectangle', '▬'],
@@ -253,20 +289,32 @@ function Reader() {
             )}
           </div>
 
-          <div style={{ width: 1, height: 28, background: '#ddd', margin: '0 6px' }} />
+          {/* Separator */}
+          <div style={{ width: 32, height: 1, background: '#ddd' }} />
 
-          <button onClick={() => setIframeKey(k => k + 1)} title="Sayfayı sıfırla" style={{
-            display: 'inline-flex', alignItems: 'center', gap: 6,
-            padding: '8px 14px', background: 'none', border: '1px solid #ddd',
-            borderRadius: 8, cursor: 'pointer', fontSize: 13, color: '#333',
+          {/* Clear */}
+          <button onClick={clearCanvas} title="Temizle" style={{
+            width: 40, height: 40, borderRadius: 8, border: '1px solid #ddd',
+            background: '#fff', cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e53935',
           }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+            </svg>
+          </button>
+
+          {/* Sıfırla */}
+          <button onClick={resetAll} title="Sayfayı sıfırla" style={{
+            width: 40, height: 40, borderRadius: 8, border: '1px solid #ddd',
+            background: '#fff', cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#333',
+          }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
             </svg>
-            Sıfırla
           </button>
         </div>
-      </div>
+      )}
     </>
   )
 }
