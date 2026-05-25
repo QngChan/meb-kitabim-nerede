@@ -1,7 +1,7 @@
 'use client'
 
 import { useSearchParams } from 'next/navigation'
-import { Suspense, useRef, useState, useEffect } from 'react'
+import { Suspense, useRef, useState, useEffect, useCallback } from 'react'
 
 type Tool = 'none' | 'pen' | 'eraser' | 'rectangle' | 'circle' | 'line'
 
@@ -13,6 +13,20 @@ function ToolBtn({ active, onClick, title, children }: { active: boolean; onClic
       width: 40, height: 40, borderRadius: 8, border: active ? '2px solid #6366f1' : '1px solid #ddd',
       background: active ? '#eef2ff' : '#fff', cursor: 'pointer',
       display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: '#333',
+    }}>
+      {children}
+    </button>
+  )
+}
+
+function BarBtn({ active, onClick, title, children, disabled }: { active?: boolean; onClick: () => void; title: string; children: React.ReactNode; disabled?: boolean }) {
+  return (
+    <button onClick={onClick} title={title} disabled={disabled} style={{
+      height: 44, minWidth: 44, padding: '0 10px',
+      border: 'none', background: active ? 'rgba(255,255,255,0.15)' : 'transparent',
+      cursor: disabled ? 'default' : 'pointer', opacity: disabled ? 0.3 : 1,
+      color: '#fff', display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+      fontSize: 20, borderRadius: 0,
     }}>
       {children}
     </button>
@@ -33,12 +47,10 @@ function OgmViewer({ url, evvelcevapSlug }: { url: string; evvelcevapSlug: strin
       {cevapAnahtariUrl && (
         <a href={cevapAnahtariUrl} target="_blank" rel="noopener noreferrer" style={{
           position: 'fixed', bottom: 24, right: 24, zIndex: 1000,
-          display: 'inline-flex', alignItems: 'center', gap: 6,
-          padding: '10px 18px', background: '#6366f1', color: '#fff',
-          borderRadius: 8, textDecoration: 'none', fontWeight: 600,
-          fontSize: 14, boxShadow: '0 4px 12px rgba(99,102,241,0.4)',
+          display: 'inline-flex', alignItems: 'center', gap: 6, padding: '10px 18px',
+          background: '#6366f1', color: '#fff', borderRadius: 8, textDecoration: 'none',
+          fontWeight: 600, fontSize: 14, boxShadow: '0 4px 12px rgba(99,102,241,0.4)',
         }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
           Cevap Anahtarı
         </a>
       )}
@@ -47,21 +59,25 @@ function OgmViewer({ url, evvelcevapSlug }: { url: string; evvelcevapSlug: strin
 }
 
 function ImageViewer({ iid, evvelcevapSlug }: { iid: string; evvelcevapSlug: string | null }) {
-  const imgContainerRef = useRef<HTMLDivElement>(null)
-  const imgRef = useRef<HTMLImageElement>(null)
+  const scrollRef = useRef<HTMLDivElement>(null)
   const drawCanvasRef = useRef<HTMLCanvasElement>(null)
+  const panning = useRef(false)
+  const panStart = useRef({ x: 0, y: 0, sx: 0, sy: 0 })
   const [pages, setPages] = useState<string[]>([])
   const [pageIdx, setPageIdx] = useState(0)
   const [scale, setScale] = useState(1)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [query, setQuery] = useState('')
   const [tool, setTool] = useState<Tool>('none')
   const [color, setColor] = useState('#000000')
   const [isDrawing, setIsDrawing] = useState(false)
   const [showColors, setShowColors] = useState(false)
   const [showShapes, setShowShapes] = useState(false)
   const [panelOpen, setPanelOpen] = useState(false)
+  const [panMode, setPanMode] = useState(false)
+  const [showThumbs, setShowThumbs] = useState(false)
+  const [showSearch, setShowSearch] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
   const startPt = useRef<{ x: number; y: number } | null>(null)
 
   const cevapAnahtariUrl = evvelcevapSlug
@@ -70,6 +86,9 @@ function ImageViewer({ iid, evvelcevapSlug }: { iid: string; evvelcevapSlug: str
 
   const penMode = tool === 'pen' || tool === 'eraser'
   const shapeMode = tool === 'rectangle' || tool === 'circle' || tool === 'line'
+  const activeToolCount = tool !== 'none' ? 1 : 0
+
+  const thumbUrls = useRef<string[]>([])
 
   useEffect(() => {
     let cancelled = false
@@ -83,6 +102,11 @@ function ImageViewer({ iid, evvelcevapSlug }: { iid: string; evvelcevapSlug: str
         const data = await res.json()
         if (cancelled) return
         setPages(data.pages)
+        thumbUrls.current = data.pages.map((p: string) => {
+          const m = p.match(/\/upload\/etki\/(\d+)\/(\d+)\.jpg$/)
+          if (m) return `https://ogmmateryal.eba.gov.tr/panel/upload/etki/${m[1]}/thumb/${m[2]}.jpg`
+          return p
+        })
         setLoading(false)
       } catch (err: any) {
         if (!cancelled) { setError(err.message); setLoading(false) }
@@ -95,21 +119,32 @@ function ImageViewer({ iid, evvelcevapSlug }: { iid: string; evvelcevapSlug: str
   useEffect(() => {
     const c = drawCanvasRef.current
     if (!c) return
-    const container = c.parentElement
-    if (!container) return
-    const rect = container.getBoundingClientRect()
-    c.width = rect.width
-    c.height = rect.height
-  }, [pageIdx, scale, pages])
+    const img = c.previousElementSibling as HTMLImageElement | null
+    if (!img) return
+    c.width = img.naturalWidth || img.width
+    c.height = img.naturalHeight || img.height
+  }, [pageIdx, pages])
 
-  const goToPage = (n: number) => {
+  const goToPage = useCallback((n: number) => {
     setPageIdx(Math.max(0, Math.min(n, pages.length - 1)))
-  }
+    setShowThumbs(false)
+  }, [pages.length])
 
-  const handleJump = (e: React.FormEvent) => {
-    e.preventDefault()
-    const n = parseInt(query)
-    if (!isNaN(n)) goToPage(n - 1)
+  useEffect(() => {
+    const h = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') goToPage(pageIdx + 1)
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') goToPage(pageIdx - 1)
+    }
+    window.addEventListener('keydown', h)
+    return () => window.removeEventListener('keydown', h)
+  }, [pageIdx, goToPage])
+
+  const fullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen()
+    } else {
+      document.exitFullscreen()
+    }
   }
 
   const getPos = (e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -188,7 +223,7 @@ function ImageViewer({ iid, evvelcevapSlug }: { iid: string; evvelcevapSlug: str
 
   const togglePen = () => {
     if (tool === 'pen') { setTool('none'); setShowColors(false); return }
-    setTool('pen'); setShowColors(true); setShowShapes(false)
+    setTool('pen'); setShowColors(true); setShowShapes(false); setPanMode(false)
   }
 
   const toggleEraser = () => {
@@ -198,15 +233,21 @@ function ImageViewer({ iid, evvelcevapSlug }: { iid: string; evvelcevapSlug: str
 
   const selectShape = (s: Tool) => { setTool(s); setShowShapes(false); setShowColors(false) }
 
-  const handleImgLoad = () => {
-    const c = drawCanvasRef.current
-    if (!c) return
-    const container = c.parentElement
-    if (!container) return
-    const rect = container.getBoundingClientRect()
-    c.width = rect.width
-    c.height = rect.height
+  const startPan = (e: React.MouseEvent) => {
+    if (!panMode) return
+    panning.current = true
+    panStart.current = { x: e.clientX, y: e.clientY, sx: scrollRef.current?.scrollLeft || 0, sy: scrollRef.current?.scrollTop || 0 }
   }
+
+  const movePan = (e: React.MouseEvent) => {
+    if (!panning.current || !panMode || !scrollRef.current) return
+    const dx = e.clientX - panStart.current.x
+    const dy = e.clientY - panStart.current.y
+    scrollRef.current.scrollLeft = panStart.current.sx - dx
+    scrollRef.current.scrollTop = panStart.current.sy - dy
+  }
+
+  const endPan = () => { panning.current = false }
 
   if (error) return <p className="error">{error}</p>
   if (loading) return (
@@ -224,66 +265,88 @@ function ImageViewer({ iid, evvelcevapSlug }: { iid: string; evvelcevapSlug: str
           background: '#6366f1', color: '#fff', textAlign: 'center',
           padding: '10px', fontSize: 13, fontWeight: 500,
         }}>
-          ✏️ Kalem modundasınız. Çıkmak için tekrar kaleme basın.
+          ✏️ Kalem modundasınız. Çıkmak için araç çubuğundan kaleme tekrar basın.
+        </div>
+      )}
+
+      {showSearch && (
+        <div style={{
+          position: 'fixed', top: 50, left: '50%', transform: 'translateX(-50%)', zIndex: 9998,
+          background: '#fff', borderRadius: 10, boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
+          padding: '12px 16px', display: 'flex', gap: 8, alignItems: 'center', minWidth: 320,
+        }}>
+          <input type="text" placeholder="Sayfa numarası girin..."
+            value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter') { const n = parseInt(searchQuery); if (!isNaN(n)) goToPage(n - 1); setShowSearch(false) } }}
+            style={{ flex: 1, padding: '8px 12px', borderRadius: 6, border: '1px solid #ddd', fontSize: 14, outline: 'none' }}
+            autoFocus
+          />
+          <button onClick={() => { const n = parseInt(searchQuery); if (!isNaN(n)) goToPage(n - 1); setShowSearch(false) }} style={{
+            padding: '8px 14px', borderRadius: 6, background: '#6366f1', color: '#fff',
+            border: 'none', cursor: 'pointer', fontWeight: 500, fontSize: 13,
+          }}>Git</button>
+          <button onClick={() => setShowSearch(false)} style={{
+            padding: '8px 10px', borderRadius: 6, background: '#f5f5f5', color: '#666',
+            border: '1px solid #ddd', cursor: 'pointer', fontSize: 16,
+          }}>✕</button>
+        </div>
+      )}
+
+      {/* Thumbnails modal */}
+      {showThumbs && (
+        <div onClick={() => setShowThumbs(false)} style={{
+          position: 'fixed', inset: 0, zIndex: 9997,
+          background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          padding: 20,
+        }}>
+          <div onClick={e => e.stopPropagation()} style={{
+            background: '#222', borderRadius: 12, padding: 20, maxWidth: '90vw', maxHeight: '80vh',
+            overflowY: 'auto', display: 'flex', flexWrap: 'wrap', gap: 10, justifyContent: 'center',
+          }}>
+            {pages.map((_, i) => (
+              <div key={i} onClick={() => goToPage(i)} style={{
+                cursor: 'pointer', borderRadius: 6, overflow: 'hidden',
+                border: i === pageIdx ? '3px solid #6366f1' : '2px solid transparent',
+                opacity: i === pageIdx ? 1 : 0.6, transition: 'opacity 0.15s',
+              }}>
+                <img src={thumbUrls.current[i]} alt={`S.${i + 1}`} style={{ width: 120, height: 160, objectFit: 'cover', display: 'block' }}
+                  onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} />
+                <div style={{ textAlign: 'center', color: '#fff', fontSize: 11, padding: '4px 0', background: '#333' }}>
+                  {i + 1}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
       <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', paddingTop: penMode ? 40 : 0, transition: 'padding-top 0.2s' }}>
-        <div style={{
-          display: 'flex', alignItems: 'center', padding: '8px 16px',
-          background: '#fff', borderBottom: '1px solid #ddd', gap: 12, flexShrink: 0,
-        }}>
-          <a href="javascript:history.back()" className="back-link" style={{ marginBottom: 0 }}>← Geri</a>
-          <span style={{ fontSize: 14, color: '#666' }}>Sayfa {pageIdx + 1} / {pages.length}</span>
-
-          <form onSubmit={handleJump} style={{ display: 'flex', gap: 4, marginLeft: 8 }}>
-            <input type="number" min={1} max={pages.length} placeholder="Git..."
-              value={query} onChange={e => setQuery(e.target.value)}
-              style={{ width: 60, padding: '4px 8px', borderRadius: 6, border: '1px solid #ddd', fontSize: 13, outline: 'none' }}
-            />
-            <button type="submit" style={{
-              padding: '4px 10px', borderRadius: 6, border: 'none',
-              background: '#6366f1', color: '#fff', cursor: 'pointer', fontSize: 12, fontWeight: 500,
-            }}>Git</button>
-          </form>
-
-          <div style={{ marginLeft: 'auto', display: 'flex', gap: 4, alignItems: 'center' }}>
-            <button onClick={() => setScale(s => Math.max(0.3, s - 0.2))} title="Küçült" style={{
-              padding: '6px 10px', border: '1px solid #ddd', borderRadius: 6, background: '#fff', cursor: 'pointer', fontSize: 16, lineHeight: 1,
-            }}>−</button>
-            <span style={{ fontSize: 12, color: '#666', minWidth: 36, textAlign: 'center' }}>{Math.round(scale * 100)}%</span>
-            <button onClick={() => setScale(s => Math.min(3, s + 0.2))} title="Büyüt" style={{
-              padding: '6px 10px', border: '1px solid #ddd', borderRadius: 6, background: '#fff', cursor: 'pointer', fontSize: 16, lineHeight: 1,
-            }}>+</button>
-          </div>
-        </div>
-
-        <div style={{
+        {/* Scrollable page area */}
+        <div ref={scrollRef} style={{
           flex: 1, overflow: 'auto', display: 'flex', justifyContent: 'center',
           background: '#f5f5f5', position: 'relative',
-          boxShadow: penMode ? '0 0 0 4px #6366f1 inset' : 'none',
-          transition: 'box-shadow 0.2s',
+          cursor: panMode ? 'grab' : (panning.current ? 'grabbing' : 'default'),
         }}>
-          <div ref={imgContainerRef} style={{ position: 'relative', alignSelf: 'flex-start', margin: '20px auto' }}>
+          <div style={{ position: 'relative', alignSelf: 'flex-start', margin: '20px auto' }}
+            onMouseDown={startPan} onMouseMove={movePan} onMouseUp={endPan} onMouseLeave={endPan}>
             <img
-              ref={imgRef}
               src={pages[pageIdx]}
               alt={`Sayfa ${pageIdx + 1}`}
-              onLoad={handleImgLoad}
+              draggable={false}
               style={{
                 display: 'block', maxWidth: '100%',
                 transform: `scale(${scale})`,
                 transformOrigin: 'top left',
                 boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
+                userSelect: 'none',
               }}
             />
             <canvas
               ref={drawCanvasRef}
               style={{
-                position: 'absolute', top: 0, left: 0,
-                pointerEvents: tool === 'none' ? 'none' : 'auto',
+                position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
+                pointerEvents: tool === 'none' || panMode ? 'none' : 'auto',
                 cursor: tool === 'eraser' ? 'not-allowed' : 'crosshair',
-                boxShadow: penMode ? '0 0 0 2px #6366f1' : 'none',
               }}
               onMouseDown={onDrawDown} onMouseMove={onDrawMove}
               onMouseUp={onDrawUp} onMouseLeave={onDrawUp}
@@ -291,40 +354,77 @@ function ImageViewer({ iid, evvelcevapSlug }: { iid: string; evvelcevapSlug: str
           </div>
         </div>
 
+        {/* OGM-style bottom toolbar */}
         <div style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12,
-          padding: '8px 16px', background: '#fff', borderTop: '1px solid #ddd', flexShrink: 0,
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          height: 52, flexShrink: 0, background: '#3a3b3f', color: '#fff',
+          padding: '0 4px', userSelect: 'none',
         }}>
-          <button onClick={() => goToPage(pageIdx - 1)} disabled={pageIdx <= 0} style={{
-            padding: '6px 14px', borderRadius: 6, border: '1px solid #ddd',
-            background: '#fff', cursor: pageIdx <= 0 ? 'default' : 'pointer', opacity: pageIdx <= 0 ? 0.4 : 1,
-          }}>◀ Önceki</button>
-          <span style={{ fontSize: 13, color: '#666' }}>{pageIdx + 1} / {pages.length}</span>
-          <button onClick={() => goToPage(pageIdx + 1)} disabled={pageIdx >= pages.length - 1} style={{
-            padding: '6px 14px', borderRadius: 6, border: '1px solid #ddd',
-            background: '#fff', cursor: pageIdx >= pages.length - 1 ? 'default' : 'pointer', opacity: pageIdx >= pages.length - 1 ? 0.4 : 1,
-          }}>Sonraki ▶</button>
+          {/* Left group */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 0 }}>
+            <BarBtn onClick={() => { const d = new URLSearchParams(); d.set('id', iid); window.open(`/api/proxy/pdf/${iid}`) }} title="PDF İndir">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            </BarBtn>
+            <div style={{ width: 1, height: 28, background: 'rgba(255,255,255,0.15)' }} />
+            <BarBtn onClick={() => setScale(s => Math.max(0.3, s - 0.2))} title="Küçült">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+            </BarBtn>
+            <BarBtn onClick={() => setScale(s => Math.min(3, s + 0.2))} title="Büyüt">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+            </BarBtn>
+            <BarBtn active={panMode} onClick={() => { setPanMode(!panMode); if (!panMode) setTool('none') }} title="El (Sürükle)">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 11V6a2 2 0 0 0-4 0v1M14 10V4a2 2 0 0 0-4 0v6M10 10.5V6a2 2 0 0 0-4 0v8"/><path d="M18 8a2 2 0 0 1 4 0v6a8 8 0 0 1-8 8h-2c-2.21 0-4.21-.9-5.7-2.3L2.7 15.7a1.5 1.5 0 0 1 0-2.1l.1-.1a1.8 1.8 0 0 1 2.6.2L8 16v-5.5"/></svg>
+            </BarBtn>
+            <BarBtn onClick={() => setScale(1)} title="Sıfırla">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/><line x1="11" y1="8" x2="11" y2="14"/></svg>
+            </BarBtn>
+          </div>
+
+          {/* Center group */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 0 }}>
+            <BarBtn onClick={() => goToPage(0)} disabled={pageIdx <= 0} title="İlk Sayfa">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="11 17 6 12 11 7"/><polyline points="18 17 13 12 18 7"/></svg>
+            </BarBtn>
+            <BarBtn onClick={() => goToPage(pageIdx - 1)} disabled={pageIdx <= 0} title="Önceki">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg>
+            </BarBtn>
+            <div onClick={() => setShowThumbs(true)} title="Sayfa listesi" style={{
+              cursor: 'pointer', fontSize: 14, fontWeight: 500, padding: '0 12px',
+              minWidth: 80, textAlign: 'center', lineHeight: '44px', whiteSpace: 'nowrap',
+            }}>
+              {pageIdx + 1} / {pages.length}
+            </div>
+            <BarBtn onClick={() => goToPage(pageIdx + 1)} disabled={pageIdx >= pages.length - 1} title="Sonraki">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="9 18 15 12 9 6"/></svg>
+            </BarBtn>
+            <BarBtn onClick={() => goToPage(pages.length - 1)} disabled={pageIdx >= pages.length - 1} title="Son Sayfa">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/></svg>
+            </BarBtn>
+          </div>
+
+          {/* Right group */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 0 }}>
+            <BarBtn active={activeToolCount > 0} onClick={() => setPanelOpen(!panelOpen)} title="Çizim Araçları">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+            </BarBtn>
+            <BarBtn onClick={() => setShowSearch(true)} title="Sayfaya Git">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            </BarBtn>
+            <BarBtn onClick={() => setShowThumbs(true)} title="Küçük Resimler">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+            </BarBtn>
+            <div style={{ width: 1, height: 28, background: 'rgba(255,255,255,0.15)' }} />
+            <BarBtn onClick={fullscreen} title="Tam Ekran">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+            </BarBtn>
+          </div>
         </div>
       </div>
 
-      <button
-        onClick={() => { setPanelOpen(!panelOpen); if (panelOpen) { setTool('none'); setShowColors(false); setShowShapes(false) } }}
-        title="Kalem"
-        style={{
-          position: 'fixed', left: 16, top: '50%', transform: 'translateY(-50%)', zIndex: 2000,
-          width: 44, height: 44, borderRadius: '50%', border: penMode ? '2px solid #6366f1' : '1px solid #ddd',
-          background: penMode ? '#eef2ff' : '#fff', cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#333',
-        }}
-      >
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/>
-        </svg>
-      </button>
-
+      {/* Drawing panel (left side) */}
       {panelOpen && (
         <div style={{
-          position: 'fixed', left: 72, top: '50%', transform: 'translateY(-50%)', zIndex: 2000,
+          position: 'fixed', left: 16, top: '50%', transform: 'translateY(-50%)', zIndex: 2000,
           background: '#fff', borderRadius: 12, border: '1px solid #e0e0e0', boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
           padding: '10px', display: 'flex', flexDirection: 'column', gap: 6, minWidth: 48, alignItems: 'center',
         }}>
@@ -376,13 +476,11 @@ function ImageViewer({ iid, evvelcevapSlug }: { iid: string; evvelcevapSlug: str
 
       {cevapAnahtariUrl && (
         <a href={cevapAnahtariUrl} target="_blank" rel="noopener noreferrer" style={{
-          position: 'fixed', bottom: 80, right: 24, zIndex: 1000,
-          display: 'inline-flex', alignItems: 'center', gap: 6,
-          padding: '10px 18px', background: '#6366f1', color: '#fff',
-          borderRadius: 8, textDecoration: 'none', fontWeight: 600,
-          fontSize: 14, boxShadow: '0 4px 12px rgba(99,102,241,0.4)',
+          position: 'fixed', bottom: 68, right: 24, zIndex: 1000,
+          display: 'inline-flex', alignItems: 'center', gap: 6, padding: '10px 18px',
+          background: '#6366f1', color: '#fff', borderRadius: 8, textDecoration: 'none',
+          fontWeight: 600, fontSize: 14, boxShadow: '0 4px 12px rgba(99,102,241,0.4)',
         }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
           Cevap Anahtarı
         </a>
       )}
