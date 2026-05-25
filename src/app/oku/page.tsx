@@ -61,11 +61,13 @@ function OgmViewer({ url, evvelcevapSlug }: { url: string; evvelcevapSlug: strin
 function ImageViewer({ iid, evvelcevapSlug }: { iid: string; evvelcevapSlug: string | null }) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const drawCanvasRef = useRef<HTMLCanvasElement>(null)
+  const imgRef = useRef<HTMLImageElement>(null)
   const panning = useRef(false)
   const panStart = useRef({ x: 0, y: 0, sx: 0, sy: 0 })
   const [pages, setPages] = useState<string[]>([])
   const [pageIdx, setPageIdx] = useState(0)
-  const [scale, setScale] = useState(1)
+  const [scale, setScale] = useState(0)
+  const [imgSize, setImgSize] = useState({ w: 0, h: 0 })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [tool, setTool] = useState<Tool>('none')
@@ -118,12 +120,21 @@ function ImageViewer({ iid, evvelcevapSlug }: { iid: string; evvelcevapSlug: str
 
   useEffect(() => {
     const c = drawCanvasRef.current
-    if (!c) return
-    const img = c.previousElementSibling as HTMLImageElement | null
-    if (!img) return
-    c.width = img.naturalWidth || img.width
-    c.height = img.naturalHeight || img.height
-  }, [pageIdx, pages])
+    if (!c || !imgSize.w) return
+    c.width = imgSize.w * (scale || 1)
+    c.height = imgSize.h * (scale || 1)
+  }, [pageIdx, imgSize, scale])
+
+  const handleImgLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    const img = e.currentTarget
+    const nw = img.naturalWidth
+    const nh = img.naturalHeight
+    setImgSize({ w: nw, h: nh })
+    const maxW = window.innerWidth - 40
+    const maxH = window.innerHeight - 130
+    const s = Math.min(maxW / nw, maxH / nh, 1)
+    setScale(Math.round(s * 100) / 100)
+  }
 
   const goToPage = useCallback((n: number) => {
     setPageIdx(Math.max(0, Math.min(n, pages.length - 1)))
@@ -327,30 +338,38 @@ function ImageViewer({ iid, evvelcevapSlug }: { iid: string; evvelcevapSlug: str
           background: '#f5f5f5', position: 'relative',
           cursor: panMode ? 'grab' : (panning.current ? 'grabbing' : 'default'),
         }}>
-          <div style={{ position: 'relative', alignSelf: 'flex-start', margin: '20px auto' }}
+          <div style={{ position: 'relative', alignSelf: 'flex-start', margin: 'auto', top: 0 }}
             onMouseDown={startPan} onMouseMove={movePan} onMouseUp={endPan} onMouseLeave={endPan}>
-            <img
-              src={pages[pageIdx]}
-              alt={`Sayfa ${pageIdx + 1}`}
-              draggable={false}
-              style={{
-                display: 'block', maxWidth: '100%',
-                transform: `scale(${scale})`,
-                transformOrigin: 'top left',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
-                userSelect: 'none',
-              }}
-            />
-            <canvas
-              ref={drawCanvasRef}
-              style={{
-                position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
-                pointerEvents: tool === 'none' || panMode ? 'none' : 'auto',
-                cursor: tool === 'eraser' ? 'not-allowed' : 'crosshair',
-              }}
-              onMouseDown={onDrawDown} onMouseMove={onDrawMove}
-              onMouseUp={onDrawUp} onMouseLeave={onDrawUp}
-            />
+            {imgSize.w > 0 && (
+              <>
+                <img
+                  ref={imgRef}
+                  src={pages[pageIdx]}
+                  alt={`Sayfa ${pageIdx + 1}`}
+                  draggable={false}
+                  onLoad={imgSize.w ? undefined : handleImgLoad}
+                  width={Math.round(imgSize.w * scale)}
+                  height={Math.round(imgSize.h * scale)}
+                  style={{
+                    display: 'block',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
+                    userSelect: 'none',
+                  }}
+                />
+                <canvas
+                  ref={drawCanvasRef}
+                  style={{
+                    position: 'absolute', top: 0, left: 0,
+                    width: Math.round(imgSize.w * scale) + 'px',
+                    height: Math.round(imgSize.h * scale) + 'px',
+                    pointerEvents: tool === 'none' || panMode ? 'none' : 'auto',
+                    cursor: tool === 'eraser' ? 'not-allowed' : 'crosshair',
+                  }}
+                  onMouseDown={onDrawDown} onMouseMove={onDrawMove}
+                  onMouseUp={onDrawUp} onMouseLeave={onDrawUp}
+                />
+              </>
+            )}
           </div>
         </div>
 
