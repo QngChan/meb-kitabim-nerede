@@ -232,6 +232,7 @@ function ImageViewer({ iid, evvelcevapSlug }: { iid: string; evvelcevapSlug: str
     if (tool === 'none') return
     if (isDrawing && (tool === 'pen' || tool === 'eraser')) {
       setIsDrawing(false)
+      saveCurrentDrawing()
       return
     }
     if (shapeMode && startPt.current) {
@@ -249,6 +250,7 @@ function ImageViewer({ iid, evvelcevapSlug }: { iid: string; evvelcevapSlug: str
         ctx.ellipse((sx + ex) / 2, (sy + ey) / 2, Math.abs(ex - sx) / 2, Math.abs(ey - sy) / 2, 0, 0, Math.PI * 2)
       } else if (tool === 'line') { ctx.moveTo(sx, sy); ctx.lineTo(ex, ey) }
       ctx.stroke()
+      saveCurrentDrawing()
       setTool('none')
     }
     startPt.current = null
