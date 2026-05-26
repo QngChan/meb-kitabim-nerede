@@ -282,14 +282,6 @@ function ImageViewer({ iid, evvelcevapSlug }: { iid: string; evvelcevapSlug: str
 
   const endPan = () => { panning.current = false }
 
-  const doSearch = () => {
-    const input = searchRef.current
-    if (!input) return
-    const n = parseInt(input.value)
-    if (!isNaN(n)) goToPage(n - 1)
-    setShowSearch(false)
-  }
-
   if (error) return <p className="error">{error}</p>
   if (loading) return (
     <div className="container" style={{ textAlign: 'center', padding: 80 }}>
@@ -318,11 +310,22 @@ function ImageViewer({ iid, evvelcevapSlug }: { iid: string; evvelcevapSlug: str
         }}>
           <input ref={searchRef} type="text" placeholder="Sayfa numarası girin..."
             defaultValue=""
-            onKeyDown={e => { if (e.key === 'Enter') doSearch() }}
+            onKeyDown={e => {
+              if (e.key !== 'Enter') return
+              const v = (e.target as HTMLInputElement).value
+              const n = parseInt(v)
+              if (!isNaN(n)) goToPage(n - 1)
+              setShowSearch(false)
+            }}
             style={{ flex: 1, padding: '8px 12px', borderRadius: 6, border: '1px solid #ddd', fontSize: 14, outline: 'none' }}
             autoFocus
           />
-          <button onClick={doSearch} style={{
+          <button onClick={() => {
+            if (!searchRef.current) return
+            const n = parseInt(searchRef.current.value)
+            if (!isNaN(n)) goToPage(n - 1)
+            setShowSearch(false)
+          }} style={{
             padding: '8px 14px', borderRadius: 6, background: '#6366f1', color: '#fff',
             border: 'none', cursor: 'pointer', fontWeight: 500, fontSize: 13,
           }}>Git</button>
