@@ -67,6 +67,7 @@ function ImageViewer({ iid, evvelcevapSlug }: { iid: string; evvelcevapSlug: str
   const panStart = useRef({ x: 0, y: 0, sx: 0, sy: 0 })
   const [pages, setPages] = useState<string[]>([])
   const [pageIdx, setPageIdx] = useState(0)
+  const [firstPage, setFirstPage] = useState(1)
   const [scale, setScale] = useState(1)
   const [dispW, setDispW] = useState(0)
   const [dispH, setDispH] = useState(0)
@@ -130,6 +131,7 @@ function ImageViewer({ iid, evvelcevapSlug }: { iid: string; evvelcevapSlug: str
         const data = await res.json()
         if (cancelled) return
         setPages(data.pages)
+        if (data.firstPage) setFirstPage(data.firstPage)
         thumbUrls.current = data.pages.map((p: string) => {
           const m = p.match(/\/upload\/etki\/(\d+)\/(\d+)\.jpg$/)
           if (m) return `https://ogmmateryal.eba.gov.tr/panel/upload/etki/${m[1]}/thumb/${m[2]}.jpg`
@@ -313,8 +315,8 @@ function ImageViewer({ iid, evvelcevapSlug }: { iid: string; evvelcevapSlug: str
             onKeyDown={e => {
               if (e.key !== 'Enter') return
               const v = (e.target as HTMLInputElement).value
-              const n = parseInt(v)
-              if (!isNaN(n)) goToPage(n - 1)
+              const n = parseInt(v) - firstPage
+              if (!isNaN(n) && n >= 0) goToPage(n)
               setShowSearch(false)
             }}
             style={{ flex: 1, padding: '8px 12px', borderRadius: 6, border: '1px solid #ddd', fontSize: 14, outline: 'none' }}
@@ -322,8 +324,8 @@ function ImageViewer({ iid, evvelcevapSlug }: { iid: string; evvelcevapSlug: str
           />
           <button onClick={() => {
             if (!searchRef.current) return
-            const n = parseInt(searchRef.current.value)
-            if (!isNaN(n)) goToPage(n - 1)
+            const n = parseInt(searchRef.current.value) - firstPage
+            if (!isNaN(n) && n >= 0) goToPage(n)
             setShowSearch(false)
           }} style={{
             padding: '8px 14px', borderRadius: 6, background: '#6366f1', color: '#fff',
@@ -353,10 +355,10 @@ function ImageViewer({ iid, evvelcevapSlug }: { iid: string; evvelcevapSlug: str
                 border: i === pageIdx ? '3px solid #6366f1' : '2px solid transparent',
                 opacity: i === pageIdx ? 1 : 0.6, transition: 'opacity 0.15s',
               }}>
-                <img src={thumbUrls.current[i]} alt={`S.${i + 1}`} style={{ width: 120, height: 160, objectFit: 'cover', display: 'block' }}
+                <img src={thumbUrls.current[i]} alt={`S.${i + firstPage}`} style={{ width: 120, height: 160, objectFit: 'cover', display: 'block' }}
                   onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} />
                 <div style={{ textAlign: 'center', color: '#fff', fontSize: 11, padding: '4px 0', background: '#333' }}>
-                  {i + 1}
+                  {i + firstPage}
                 </div>
               </div>
             ))}
@@ -375,7 +377,7 @@ function ImageViewer({ iid, evvelcevapSlug }: { iid: string; evvelcevapSlug: str
           <img
             ref={imgRef}
             src={pages[pageIdx]}
-            alt={`Sayfa ${pageIdx + 1}`}
+            alt={`Sayfa ${pageIdx + firstPage}`}
             draggable={false}
             onLoad={fitToScreen}
             width={dispW || undefined}
@@ -436,7 +438,7 @@ function ImageViewer({ iid, evvelcevapSlug }: { iid: string; evvelcevapSlug: str
               cursor: 'pointer', fontSize: 14, fontWeight: 500, padding: '0 12px',
               minWidth: 80, textAlign: 'center', lineHeight: '44px', whiteSpace: 'nowrap',
             }}>
-              {pageIdx + 1} / {pages.length}
+              {pageIdx + firstPage} / {pages.length}
             </div>
             <BarBtn onClick={() => goToPage(pageIdx + 1)} disabled={pageIdx >= pages.length - 1} title="Sonraki">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="9 18 15 12 9 6"/></svg>
