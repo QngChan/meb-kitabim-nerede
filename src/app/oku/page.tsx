@@ -282,6 +282,13 @@ function ImageViewer({ iid, evvelcevapSlug }: { iid: string; evvelcevapSlug: str
     scrollRef.current.scrollTop = panStart.current.sy - dy
   }
 
+  const zoomTo = (newScale: number) => {
+    const { w, h } = naturalSize.current
+    if (!w || !h) return
+    setScale(newScale)
+    applySize(w, h, newScale)
+  }
+
   const endPan = () => { panning.current = false }
 
   if (error) return <p className="error">{error}</p>
@@ -412,16 +419,16 @@ function ImageViewer({ iid, evvelcevapSlug }: { iid: string; evvelcevapSlug: str
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             </BarBtn>
             <div style={{ width: 1, height: 28, background: 'rgba(255,255,255,0.15)' }} />
-            <BarBtn onClick={() => setScale(s => Math.max(0.3, s - 0.2))} title="Küçült">
+            <BarBtn onClick={() => zoomTo(Math.max(0.3, scale - 0.2))} title="Küçült">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
             </BarBtn>
-            <BarBtn onClick={() => setScale(s => Math.min(3, s + 0.2))} title="Büyüt">
+            <BarBtn onClick={() => zoomTo(Math.min(3, scale + 0.2))} title="Büyüt">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
             </BarBtn>
             <BarBtn active={panMode} onClick={() => { setPanMode(!panMode); if (!panMode) setTool('none') }} title="El (Sürükle)">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 11V6a2 2 0 0 0-4 0v1M14 10V4a2 2 0 0 0-4 0v6M10 10.5V6a2 2 0 0 0-4 0v8"/><path d="M18 8a2 2 0 0 1 4 0v6a8 8 0 0 1-8 8h-2c-2.21 0-4.21-.9-5.7-2.3L2.7 15.7a1.5 1.5 0 0 1 0-2.1l.1-.1a1.8 1.8 0 0 1 2.6.2L8 16v-5.5"/></svg>
             </BarBtn>
-            <BarBtn onClick={() => setScale(1)} title="Sıfırla">
+            <BarBtn onClick={fitToScreen} title="Sıfırla">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/><line x1="11" y1="8" x2="11" y2="14"/></svg>
             </BarBtn>
           </div>
