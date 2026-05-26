@@ -105,7 +105,20 @@ function ImageViewer({ iid, evvelcevapSlug }: { iid: string; evvelcevapSlug: str
     setDispH(Math.round(nh * s))
   }, [])
 
+  const saveCurrentDrawing = useCallback(() => {
+    const c = drawCanvasRef.current
+    if (!c || !c.width || !c.height) return
+    const offscreen = document.createElement('canvas')
+    offscreen.width = c.width
+    offscreen.height = c.height
+    const offCtx = offscreen.getContext('2d')
+    if (!offCtx) return
+    offCtx.drawImage(c, 0, 0)
+    pageDrawings.current.set(pageIdxRef.current, offscreen)
+  }, [])
+
   const fitToScreen = useCallback(() => {
+    saveCurrentDrawing()
     const img = imgRef.current
     if (!img) return false
     const nw = img.naturalWidth
@@ -116,7 +129,7 @@ function ImageViewer({ iid, evvelcevapSlug }: { iid: string; evvelcevapSlug: str
     setScale(s)
     applySize(nw, nh, s)
     return true
-  }, [calcFitScale, applySize])
+  }, [calcFitScale, applySize, saveCurrentDrawing])
 
   const thumbUrls = useRef<string[]>([])
 
@@ -285,18 +298,6 @@ function ImageViewer({ iid, evvelcevapSlug }: { iid: string; evvelcevapSlug: str
     scrollRef.current.scrollTop = panStart.current.sy - dy
   }
 
-  const saveCurrentDrawing = useCallback(() => {
-    const c = drawCanvasRef.current
-    if (!c || !c.width || !c.height) return
-    const offscreen = document.createElement('canvas')
-    offscreen.width = c.width
-    offscreen.height = c.height
-    const offCtx = offscreen.getContext('2d')
-    if (!offCtx) return
-    offCtx.drawImage(c, 0, 0)
-    pageDrawings.current.set(pageIdxRef.current, offscreen)
-  }, [])
-
   const goToPage = useCallback((n: number) => {
     const newIdx = Math.max(0, Math.min(n, pages.length - 1))
     saveCurrentDrawing()
@@ -305,6 +306,7 @@ function ImageViewer({ iid, evvelcevapSlug }: { iid: string; evvelcevapSlug: str
   }, [pages.length, saveCurrentDrawing])
 
   const zoomTo = (newScale: number) => {
+    saveCurrentDrawing()
     const { w, h } = naturalSize.current
     if (!w || !h) return
     setScale(newScale)
