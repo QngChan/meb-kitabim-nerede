@@ -177,7 +177,7 @@ function ImageViewer({ iid, evvelcevapSlug }: { iid: string; evvelcevapSlug: str
     if (!ctx) return
     ctx.clearRect(0, 0, c.width, c.height)
     const saved = pageDrawings.current.get(pageIdx)
-    if (saved) { ctx.drawImage(saved, 0, 0) }
+    if (saved) { ctx.drawImage(saved, 0, 0, c.width, c.height) }
   }, [pageIdx, dispW, dispH])
 
   const fullscreen = () => {
