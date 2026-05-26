@@ -35,7 +35,7 @@ function BarBtn({ active, onClick, title, children, disabled }: { active?: boole
 
 function OgmViewer({ url, evvelcevapSlug }: { url: string; evvelcevapSlug: string | null }) {
   const cevapAnahtariUrl = evvelcevapSlug
-    ? `https://www.evvelcevap.com/${evvelcevapSlug}-ders-ve-calisma-kitabi-cevaplari/`
+    ? `https://www.evvelcevap.com/${evvelcevapSlug}-kitabi-cevaplari/`
     : null
 
   return (
@@ -85,10 +85,10 @@ function ImageViewer({ iid, evvelcevapSlug }: { iid: string; evvelcevapSlug: str
   const naturalSize = useRef({ w: 0, h: 0 })
   const searchRef = useRef<HTMLInputElement>(null)
   const pageDrawings = useRef<Map<number, HTMLCanvasElement>>(new Map())
-  const prevPageIdx = useRef<number>(-1)
+  const pageIdxRef = useRef(0)
 
   const cevapAnahtariUrl = evvelcevapSlug
-    ? `https://www.evvelcevap.com/${evvelcevapSlug}-ders-ve-calisma-kitabi-cevaplari/`
+    ? `https://www.evvelcevap.com/${evvelcevapSlug}-kitabi-cevaplari/`
     : null
 
   const penMode = tool === 'pen' || tool === 'eraser'
@@ -155,24 +155,14 @@ function ImageViewer({ iid, evvelcevapSlug }: { iid: string; evvelcevapSlug: str
   }, [pageIdx, fitToScreen])
 
   useEffect(() => {
+    pageIdxRef.current = pageIdx
     const c = drawCanvasRef.current
     if (!c || !c.width || !c.height) return
     const ctx = c.getContext('2d')
     if (!ctx) return
-
-    if (prevPageIdx.current >= 0 && prevPageIdx.current !== pageIdx) {
-      const offscreen = document.createElement('canvas')
-      offscreen.width = c.width
-      offscreen.height = c.height
-      const offCtx = offscreen.getContext('2d')
-      if (offCtx) { offCtx.drawImage(c, 0, 0); pageDrawings.current.set(prevPageIdx.current, offscreen) }
-    }
-
     ctx.clearRect(0, 0, c.width, c.height)
     const saved = pageDrawings.current.get(pageIdx)
     if (saved) { ctx.drawImage(saved, 0, 0) }
-
-    prevPageIdx.current = pageIdx
   }, [pageIdx])
 
   useEffect(() => {
@@ -185,20 +175,6 @@ function ImageViewer({ iid, evvelcevapSlug }: { iid: string; evvelcevapSlug: str
     const saved = pageDrawings.current.get(pageIdx)
     if (saved) { ctx.drawImage(saved, 0, 0) }
   }, [dispW, dispH])
-
-  const goToPage = useCallback((n: number) => {
-    setPageIdx(Math.max(0, Math.min(n, pages.length - 1)))
-    setShowThumbs(false)
-  }, [pages.length])
-
-  useEffect(() => {
-    const h = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') goToPage(pageIdx + 1)
-      if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') goToPage(pageIdx - 1)
-    }
-    window.addEventListener('keydown', h)
-    return () => window.removeEventListener('keydown', h)
-  }, [pageIdx, goToPage])
 
   const fullscreen = () => {
     if (!document.fullscreenElement) {
@@ -309,6 +285,25 @@ function ImageViewer({ iid, evvelcevapSlug }: { iid: string; evvelcevapSlug: str
     scrollRef.current.scrollTop = panStart.current.sy - dy
   }
 
+  const saveCurrentDrawing = useCallback(() => {
+    const c = drawCanvasRef.current
+    if (!c || !c.width || !c.height) return
+    const offscreen = document.createElement('canvas')
+    offscreen.width = c.width
+    offscreen.height = c.height
+    const offCtx = offscreen.getContext('2d')
+    if (!offCtx) return
+    offCtx.drawImage(c, 0, 0)
+    pageDrawings.current.set(pageIdxRef.current, offscreen)
+  }, [])
+
+  const goToPage = useCallback((n: number) => {
+    const newIdx = Math.max(0, Math.min(n, pages.length - 1))
+    saveCurrentDrawing()
+    setPageIdx(newIdx)
+    setShowThumbs(false)
+  }, [pages.length, saveCurrentDrawing])
+
   const zoomTo = (newScale: number) => {
     const { w, h } = naturalSize.current
     if (!w || !h) return
@@ -317,6 +312,15 @@ function ImageViewer({ iid, evvelcevapSlug }: { iid: string; evvelcevapSlug: str
   }
 
   const endPan = () => { panning.current = false }
+
+  useEffect(() => {
+    const h = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') goToPage(pageIdx + 1)
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') goToPage(pageIdx - 1)
+    }
+    window.addEventListener('keydown', h)
+    return () => window.removeEventListener('keydown', h)
+  }, [pageIdx, goToPage])
 
   if (error) return <p className="error">{error}</p>
   if (loading) return (
