@@ -94,7 +94,7 @@ function ImageViewer({ iid, evvelcevapSlug }: { iid: string; evvelcevapSlug: str
 
   const calcFitScale = useCallback((nw: number, nh: number) => {
     const maxW = window.innerWidth - 40
-    const maxH = window.innerHeight - 130
+    const maxH = window.innerHeight - 96
     return Math.min(maxW / nw, maxH / nh, 1)
   }, [])
 
@@ -353,46 +353,46 @@ function ImageViewer({ iid, evvelcevapSlug }: { iid: string; evvelcevapSlug: str
         </div>
       )}
 
-      <div style={{ height: '100vh', overflow: 'hidden' }}>
-        {/* Scrollable page area */}
-        <div ref={scrollRef} style={{
-          height: 'calc(100vh - 52px)', overflow: 'auto', display: 'flex', justifyContent: 'center',
-          background: '#f5f5f5', position: 'relative',
-          cursor: panMode ? 'grab' : (panning.current ? 'grabbing' : 'default'),
-        }}>
-          <div ref={imgWrapRef} onMouseDown={startPan} onMouseMove={movePan} onMouseUp={endPan} onMouseLeave={endPan}
-            style={{ position: 'relative', alignSelf: 'flex-start', margin: '20px auto' }}>
-            <img
-              ref={imgRef}
-              src={pages[pageIdx]}
-              alt={`Sayfa ${pageIdx + 1}`}
-              draggable={false}
-              onLoad={fitToScreen}
-              width={dispW || undefined}
-              height={dispH || undefined}
-              style={{ display: 'block', boxShadow: '0 2px 8px rgba(0,0,0,0.12)', userSelect: 'none' }}
+      <div ref={scrollRef} style={{
+        height: '100vh', overflow: 'auto', display: 'flex', justifyContent: 'center',
+        background: '#f5f5f5', position: 'relative',
+        paddingBottom: 52,
+        cursor: panMode ? 'grab' : (panning.current ? 'grabbing' : 'default'),
+      }}>
+        <div ref={imgWrapRef} onMouseDown={startPan} onMouseMove={movePan} onMouseUp={endPan} onMouseLeave={endPan}
+          style={{ position: 'relative', alignSelf: 'flex-start', margin: '20px auto' }}>
+          <img
+            ref={imgRef}
+            src={pages[pageIdx]}
+            alt={`Sayfa ${pageIdx + 1}`}
+            draggable={false}
+            onLoad={fitToScreen}
+            width={dispW || undefined}
+            height={dispH || undefined}
+            style={{ display: 'block', boxShadow: '0 2px 8px rgba(0,0,0,0.12)', userSelect: 'none' }}
+          />
+          {dispW > 0 && (
+            <canvas
+              ref={drawCanvasRef}
+              style={{
+                position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
+                pointerEvents: tool === 'none' || panMode ? 'none' : 'auto',
+                cursor: tool === 'eraser' ? 'not-allowed' : 'crosshair',
+              }}
+              onMouseDown={onDrawDown} onMouseMove={onDrawMove}
+              onMouseUp={onDrawUp} onMouseLeave={onDrawUp}
             />
-            {dispW > 0 && (
-              <canvas
-                ref={drawCanvasRef}
-                style={{
-                  position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
-                  pointerEvents: tool === 'none' || panMode ? 'none' : 'auto',
-                  cursor: tool === 'eraser' ? 'not-allowed' : 'crosshair',
-                }}
-                onMouseDown={onDrawDown} onMouseMove={onDrawMove}
-                onMouseUp={onDrawUp} onMouseLeave={onDrawUp}
-              />
-            )}
-          </div>
+          )}
         </div>
+      </div>
 
-        {/* OGM-style bottom toolbar */}
-        <div style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          height: 52, flexShrink: 0, background: '#3a3b3f', color: '#fff',
-          padding: '0 4px', userSelect: 'none',
-        }}>
+      {/* OGM-style bottom toolbar (fixed) */}
+      <div style={{
+        position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 100,
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        height: 52, background: '#3a3b3f', color: '#fff',
+        padding: '0 4px', userSelect: 'none',
+      }}>
           {/* Left group */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 0 }}>
             <BarBtn onClick={() => { const d = new URLSearchParams(); d.set('id', iid); window.open(`/api/proxy/pdf/${iid}`) }} title="PDF İndir">
@@ -452,7 +452,6 @@ function ImageViewer({ iid, evvelcevapSlug }: { iid: string; evvelcevapSlug: str
             </BarBtn>
           </div>
         </div>
-      </div>
 
       {/* Drawing panel (left side) */}
       {panelOpen && (
