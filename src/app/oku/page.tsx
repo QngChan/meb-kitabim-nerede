@@ -156,17 +156,6 @@ function ImageViewer({ iid, evvelcevapSlug }: { iid: string; evvelcevapSlug: str
 
   useEffect(() => {
     const c = drawCanvasRef.current
-    if (!c || !dispW) return
-    c.width = dispW
-    c.height = dispH
-    const ctx = c.getContext('2d')
-    if (!ctx) return
-    const saved = pageDrawings.current.get(pageIdx)
-    if (saved) { ctx.drawImage(saved, 0, 0) }
-  }, [dispW, dispH])
-
-  useEffect(() => {
-    const c = drawCanvasRef.current
     if (!c || !c.width || !c.height) return
     const ctx = c.getContext('2d')
     if (!ctx) return
@@ -185,6 +174,17 @@ function ImageViewer({ iid, evvelcevapSlug }: { iid: string; evvelcevapSlug: str
 
     prevPageIdx.current = pageIdx
   }, [pageIdx])
+
+  useEffect(() => {
+    const c = drawCanvasRef.current
+    if (!c || !dispW) return
+    c.width = dispW
+    c.height = dispH
+    const ctx = c.getContext('2d')
+    if (!ctx) return
+    const saved = pageDrawings.current.get(pageIdx)
+    if (saved) { ctx.drawImage(saved, 0, 0) }
+  }, [dispW, dispH])
 
   const goToPage = useCallback((n: number) => {
     setPageIdx(Math.max(0, Math.min(n, pages.length - 1)))
