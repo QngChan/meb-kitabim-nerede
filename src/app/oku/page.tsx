@@ -81,9 +81,9 @@ function ImageViewer({ iid, evvelcevapSlug }: { iid: string; evvelcevapSlug: str
   const [panMode, setPanMode] = useState(false)
   const [showThumbs, setShowThumbs] = useState(false)
   const [showSearch, setShowSearch] = useState(false)
-  const [searchQuery, setSearchQuery] = useState('')
   const startPt = useRef<{ x: number; y: number } | null>(null)
   const naturalSize = useRef({ w: 0, h: 0 })
+  const searchRef = useRef<HTMLInputElement>(null)
 
   const cevapAnahtariUrl = evvelcevapSlug
     ? `https://www.evvelcevap.com/${evvelcevapSlug}-ders-ve-calisma-kitabi-cevaplari/`
@@ -282,6 +282,14 @@ function ImageViewer({ iid, evvelcevapSlug }: { iid: string; evvelcevapSlug: str
 
   const endPan = () => { panning.current = false }
 
+  const doSearch = () => {
+    const input = searchRef.current
+    if (!input) return
+    const n = parseInt(input.value)
+    if (!isNaN(n)) goToPage(n - 1)
+    setShowSearch(false)
+  }
+
   if (error) return <p className="error">{error}</p>
   if (loading) return (
     <div className="container" style={{ textAlign: 'center', padding: 80 }}>
@@ -308,13 +316,13 @@ function ImageViewer({ iid, evvelcevapSlug }: { iid: string; evvelcevapSlug: str
           background: '#fff', borderRadius: 10, boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
           padding: '12px 16px', display: 'flex', gap: 8, alignItems: 'center', minWidth: 320,
         }}>
-          <input type="text" placeholder="Sayfa numarası girin..."
-            value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
-            onKeyDown={e => { if (e.key === 'Enter') { const n = parseInt(searchQuery); if (!isNaN(n)) goToPage(n - 1); setShowSearch(false) } }}
+          <input ref={searchRef} type="text" placeholder="Sayfa numarası girin..."
+            defaultValue=""
+            onKeyDown={e => { if (e.key === 'Enter') doSearch() }}
             style={{ flex: 1, padding: '8px 12px', borderRadius: 6, border: '1px solid #ddd', fontSize: 14, outline: 'none' }}
             autoFocus
           />
-          <button onClick={() => { const n = parseInt(searchQuery); if (!isNaN(n)) goToPage(n - 1); setShowSearch(false) }} style={{
+          <button onClick={doSearch} style={{
             padding: '8px 14px', borderRadius: 6, background: '#6366f1', color: '#fff',
             border: 'none', cursor: 'pointer', fontWeight: 500, fontSize: 13,
           }}>Git</button>
