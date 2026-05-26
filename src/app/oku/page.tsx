@@ -159,6 +159,10 @@ function ImageViewer({ iid, evvelcevapSlug }: { iid: string; evvelcevapSlug: str
     if (!c || !dispW) return
     c.width = dispW
     c.height = dispH
+    const ctx = c.getContext('2d')
+    if (!ctx) return
+    const saved = pageDrawings.current.get(pageIdx)
+    if (saved) { ctx.drawImage(saved, 0, 0) }
   }, [dispW, dispH])
 
   useEffect(() => {
