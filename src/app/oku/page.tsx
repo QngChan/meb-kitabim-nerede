@@ -170,24 +170,15 @@ function ImageViewer({ iid, evvelcevapSlug }: { iid: string; evvelcevapSlug: str
   useEffect(() => {
     pageIdxRef.current = pageIdx
     const c = drawCanvasRef.current
-    if (!c || !c.width || !c.height) return
+    if (!c) return
+    if (dispW) { c.width = dispW; c.height = dispH }
+    if (!c.width || !c.height) return
     const ctx = c.getContext('2d')
     if (!ctx) return
     ctx.clearRect(0, 0, c.width, c.height)
     const saved = pageDrawings.current.get(pageIdx)
     if (saved) { ctx.drawImage(saved, 0, 0) }
-  }, [pageIdx])
-
-  useEffect(() => {
-    const c = drawCanvasRef.current
-    if (!c || !dispW) return
-    c.width = dispW
-    c.height = dispH
-    const ctx = c.getContext('2d')
-    if (!ctx) return
-    const saved = pageDrawings.current.get(pageIdx)
-    if (saved) { ctx.drawImage(saved, 0, 0) }
-  }, [dispW, dispH])
+  }, [pageIdx, dispW, dispH])
 
   const fullscreen = () => {
     if (!document.fullscreenElement) {
