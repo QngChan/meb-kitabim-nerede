@@ -2,3 +2,5 @@ node_modules/
 .next/
 *.tsbuildinfo
 *.html
+graphify-out/
+.opencode/

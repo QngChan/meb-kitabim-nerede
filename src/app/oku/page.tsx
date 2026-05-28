@@ -80,10 +80,9 @@ function ImageViewer({ iid, evvelcevapSlug }: { iid: string; evvelcevapSlug: str
   const [showShapes, setShowShapes] = useState(false)
   const [panMode, setPanMode] = useState(false)
   const [showThumbs, setShowThumbs] = useState(false)
-  const [showSearch, setShowSearch] = useState(false)
+  const [pageInput, setPageInput] = useState('1')
   const startPt = useRef<{ x: number; y: number } | null>(null)
   const naturalSize = useRef({ w: 0, h: 0 })
-  const searchRef = useRef<HTMLInputElement>(null)
   const pageDrawings = useRef<Map<number, HTMLCanvasElement>>(new Map())
   const pageIdxRef = useRef(0)
 
@@ -179,6 +178,21 @@ function ImageViewer({ iid, evvelcevapSlug }: { iid: string; evvelcevapSlug: str
     const saved = pageDrawings.current.get(pageIdx)
     if (saved) { ctx.drawImage(saved, 0, 0, c.width, c.height) }
   }, [pageIdx, dispW, dispH])
+
+  useEffect(() => {
+    if (pages.length === 0) return
+    for (const offset of [-2, -1, 1, 2]) {
+      const idx = pageIdx + offset
+      if (idx >= 0 && idx < pages.length) {
+        const img = new Image()
+        img.src = pages[idx]
+      }
+    }
+  }, [pageIdx, pages])
+
+  useEffect(() => {
+    setPageInput(String(pageIdx + firstPage))
+  }, [pageIdx, firstPage])
 
   const fullscreen = () => {
     if (!document.fullscreenElement) {
@@ -337,40 +351,6 @@ function ImageViewer({ iid, evvelcevapSlug }: { iid: string; evvelcevapSlug: str
         </div>
       )}
 
-      {showSearch && (
-        <div style={{
-          position: 'fixed', top: 50, left: '50%', transform: 'translateX(-50%)', zIndex: 9998,
-          background: '#fff', borderRadius: 10, boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
-          padding: '12px 16px', display: 'flex', gap: 8, alignItems: 'center', minWidth: 320,
-        }}>
-          <input ref={searchRef} type="text" placeholder="Sayfa numarası girin..."
-            defaultValue=""
-            onKeyDown={e => {
-              if (e.key !== 'Enter') return
-              const v = (e.target as HTMLInputElement).value
-              const n = parseInt(v) - firstPage
-              if (!isNaN(n) && n >= 0) goToPage(n)
-              setShowSearch(false)
-            }}
-            style={{ flex: 1, padding: '8px 12px', borderRadius: 6, border: '1px solid #ddd', fontSize: 14, outline: 'none' }}
-            autoFocus
-          />
-          <button onClick={() => {
-            if (!searchRef.current) return
-            const n = parseInt(searchRef.current.value) - firstPage
-            if (!isNaN(n) && n >= 0) goToPage(n)
-            setShowSearch(false)
-          }} style={{
-            padding: '8px 14px', borderRadius: 6, background: '#6366f1', color: '#fff',
-            border: 'none', cursor: 'pointer', fontWeight: 500, fontSize: 13,
-          }}>Git</button>
-          <button onClick={() => setShowSearch(false)} style={{
-            padding: '8px 10px', borderRadius: 6, background: '#f5f5f5', color: '#666',
-            border: '1px solid #ddd', cursor: 'pointer', fontSize: 16,
-          }}>✕</button>
-        </div>
-      )}
-
       {/* Thumbnails modal */}
       {showThumbs && (
         <div onClick={() => setShowThumbs(false)} style={{
@@ -467,12 +447,27 @@ function ImageViewer({ iid, evvelcevapSlug }: { iid: string; evvelcevapSlug: str
             <BarBtn onClick={() => goToPage(pageIdx - 1)} disabled={pageIdx <= 0} title="Önceki">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg>
             </BarBtn>
-            <div onClick={() => setShowThumbs(true)} title="Sayfa listesi" style={{
-              cursor: 'pointer', fontSize: 14, fontWeight: 500, padding: '0 12px',
-              minWidth: 80, textAlign: 'center', lineHeight: '44px', whiteSpace: 'nowrap',
-            }}>
-              {pageIdx + firstPage} / {pages.length}
-            </div>
+            <input type="text" value={pageInput}
+              onChange={e => setPageInput(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === 'Enter') {
+                  const n = parseInt(pageInput) - firstPage
+                  if (!isNaN(n) && n >= 0) goToPage(n)
+                  else setPageInput(String(pageIdx + firstPage))
+                }
+              }}
+              onBlur={() => {
+                const n = parseInt(pageInput) - firstPage
+                if (!isNaN(n) && n >= 0) goToPage(n)
+                else setPageInput(String(pageIdx + firstPage))
+              }}
+              style={{
+                width: 38, textAlign: 'center', fontSize: 14, fontWeight: 500,
+                background: 'transparent', color: '#fff', border: 'none', outline: 'none',
+                padding: 0, lineHeight: '44px',
+              }}
+            />
+            <span style={{ fontSize: 14, opacity: 0.6 }}>/ {pages.length}</span>
             <BarBtn onClick={() => goToPage(pageIdx + 1)} disabled={pageIdx >= pages.length - 1} title="Sonraki">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="9 18 15 12 9 6"/></svg>
             </BarBtn>
@@ -483,9 +478,6 @@ function ImageViewer({ iid, evvelcevapSlug }: { iid: string; evvelcevapSlug: str
 
           {/* Right group */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 0 }}>
-            <BarBtn onClick={() => setShowSearch(true)} title="Sayfaya Git">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            </BarBtn>
             <BarBtn onClick={() => setShowThumbs(true)} title="Küçük Resimler">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
             </BarBtn>
