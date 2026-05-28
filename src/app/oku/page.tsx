@@ -19,20 +19,6 @@ function ToolBtn({ active, onClick, title, children }: { active: boolean; onClic
   )
 }
 
-function BarBtn({ active, onClick, title, children, disabled }: { active?: boolean; onClick: () => void; title: string; children: React.ReactNode; disabled?: boolean }) {
-  return (
-    <button onClick={onClick} title={title} disabled={disabled} style={{
-      height: 44, minWidth: 44, padding: '0 10px',
-      border: 'none', background: active ? 'rgba(255,255,255,0.15)' : 'transparent',
-      cursor: disabled ? 'default' : 'pointer', opacity: disabled ? 0.3 : 1,
-      color: '#fff', display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-      fontSize: 20, borderRadius: 0,
-    }}>
-      {children}
-    </button>
-  )
-}
-
 function OgmViewer({ url, evvelcevapSlug }: { url: string; evvelcevapSlug: string | null }) {
   const cevapAnahtariUrl = evvelcevapSlug
     ? `https://www.evvelcevap.com/${evvelcevapSlug}-kitabi-cevaplari/`
@@ -358,12 +344,7 @@ function ImageViewer({ iid, evvelcevapSlug }: { iid: string; evvelcevapSlug: str
 
   return (
     <>
-      <style>{`
-        @keyframes pulse-glow {
-          0%, 100% { box-shadow: 0 0 5px rgba(99,102,241,0.5); }
-          50% { box-shadow: 0 0 20px rgba(99,102,241,0.9), 0 0 40px rgba(99,102,241,0.4); }
-        }
-      `}</style>
+
 
       {penMode && (
         <div style={{
@@ -469,91 +450,71 @@ function ImageViewer({ iid, evvelcevapSlug }: { iid: string; evvelcevapSlug: str
         </div>
       </div>
 
-      {/* OGM-style bottom toolbar (fixed) */}
-      <div style={{
-        position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 100,
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        height: 52, background: '#3a3b3f', color: '#fff',
-        padding: '0 4px', userSelect: 'none',
-      }}>
-          {/* Left group */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 0 }}>
-            <BarBtn onClick={() => { const d = new URLSearchParams(); d.set('id', iid); window.open(`/api/proxy/pdf/${iid}`) }} title="PDF İndir">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            </BarBtn>
-            <div style={{ width: 1, height: 28, background: 'rgba(255,255,255,0.15)' }} />
-            <BarBtn onClick={() => zoomTo(Math.max(0.3, scale - 0.2))} title="Küçült">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
-            </BarBtn>
-            <BarBtn onClick={() => zoomTo(Math.min(3, scale + 0.2))} title="Büyüt">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
-            </BarBtn>
-            <BarBtn active={panMode} onClick={() => { setPanMode(!panMode); if (!panMode) setTool('none') }} title="El (Sürükle)">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 11V6a2 2 0 0 0-4 0v1M14 10V4a2 2 0 0 0-4 0v6M10 10.5V6a2 2 0 0 0-4 0v8"/><path d="M18 8a2 2 0 0 1 4 0v6a8 8 0 0 1-8 8h-2c-2.21 0-4.21-.9-5.7-2.3L2.7 15.7a1.5 1.5 0 0 1 0-2.1l.1-.1a1.8 1.8 0 0 1 2.6.2L8 16v-5.5"/></svg>
-            </BarBtn>
-            <BarBtn onClick={fitToScreen} title="Sıfırla">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/><line x1="11" y1="8" x2="11" y2="14"/></svg>
-            </BarBtn>
-          </div>
+      <div className="reader-toolbar">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 0 }}>
+          <button className="reader-bar-btn" onClick={() => window.open(`/api/proxy/pdf/${iid}`)} title="PDF İndir">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          </button>
+          <div className="reader-divider" />
+          <button className="reader-bar-btn" onClick={() => zoomTo(Math.max(0.3, scale - 0.2))} title="Küçült">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+          </button>
+          <button className="reader-bar-btn" onClick={() => zoomTo(Math.min(3, scale + 0.2))} title="Büyüt">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+          </button>
+          <button className={`reader-bar-btn${panMode ? ' reader-bar-btn-active' : ''}`} onClick={() => { setPanMode(!panMode); if (!panMode) setTool('none') }} title="El (Sürükle)">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 11V6a2 2 0 0 0-4 0v1M14 10V4a2 2 0 0 0-4 0v6M10 10.5V6a2 2 0 0 0-4 0v8"/><path d="M18 8a2 2 0 0 1 4 0v6a8 8 0 0 1-8 8h-2c-2.21 0-4.21-.9-5.7-2.3L2.7 15.7a1.5 1.5 0 0 1 0-2.1l.1-.1a1.8 1.8 0 0 1 2.6.2L8 16v-5.5"/></svg>
+          </button>
+          <button className="reader-bar-btn" onClick={fitToScreen} title="Sıfırla">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/><line x1="11" y1="8" x2="11" y2="14"/></svg>
+          </button>
+        </div>
 
-          {/* Center group */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 0 }}>
-            <BarBtn onClick={() => goToPage(0)} disabled={pageIdx <= 0} title="İlk Sayfa">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="11 17 6 12 11 7"/><polyline points="18 17 13 12 18 7"/></svg>
-            </BarBtn>
-            <BarBtn onClick={() => goToPage(pageIdx - 1)} disabled={pageIdx <= 0} title="Önceki">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg>
-            </BarBtn>
-            <input type="text" value={pageInput}
-              onChange={e => setPageInput(e.target.value)}
-              onKeyDown={e => {
-                if (e.key === 'Enter') {
-                  const n = parseInt(pageInput) - firstPage
-                  if (!isNaN(n) && n >= 0) goToPage(n)
-                  else setPageInput(String(pageIdx + firstPage))
-                }
-              }}
-              onBlur={() => {
+        <div style={{ display: 'flex', alignItems: 'center', gap: 0 }}>
+          <button className="reader-bar-btn" onClick={() => goToPage(0)} disabled={pageIdx <= 0} title="İlk Sayfa">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="11 17 6 12 11 7"/><polyline points="18 17 13 12 18 7"/></svg>
+          </button>
+          <button className="reader-bar-btn" onClick={() => goToPage(pageIdx - 1)} disabled={pageIdx <= 0} title="Önceki">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <input type="text" value={pageInput} className="reader-page-input"
+            onChange={e => setPageInput(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === 'Enter') {
                 const n = parseInt(pageInput) - firstPage
                 if (!isNaN(n) && n >= 0) goToPage(n)
                 else setPageInput(String(pageIdx + firstPage))
-              }}
-              style={{
-                width: 38, textAlign: 'center', fontSize: 14, fontWeight: 500,
-                background: 'transparent', color: '#fff', border: 'none', outline: 'none',
-                padding: 0, lineHeight: '44px',
-              }}
-            />
-            <span style={{ fontSize: 14, opacity: 0.6 }}>/ {pages.length}</span>
-            <BarBtn onClick={() => goToPage(pageIdx + 1)} disabled={pageIdx >= pages.length - 1} title="Sonraki">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="9 18 15 12 9 6"/></svg>
-            </BarBtn>
-            <BarBtn onClick={() => goToPage(pages.length - 1)} disabled={pageIdx >= pages.length - 1} title="Son Sayfa">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/></svg>
-            </BarBtn>
-          </div>
-
-          {/* Right group */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 0 }}>
-            <button onClick={() => { setShowSearch(true); setHighlightSearch(false) }} title="Sayfaya Git"
-              style={{
-                height: 44, width: 44, border: 'none', background: 'transparent',
-                cursor: 'pointer', color: '#fff', fontSize: 20, borderRadius: 0,
-                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                animation: highlightSearch ? 'pulse-glow 1.2s ease-in-out infinite' : 'none',
-                position: 'relative', zIndex: 1,
-              }}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            </button>
-            <BarBtn onClick={() => setShowThumbs(true)} title="Küçük Resimler">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-            </BarBtn>
-            <div style={{ width: 1, height: 28, background: 'rgba(255,255,255,0.15)' }} />
-            <BarBtn onClick={fullscreen} title="Tam Ekran">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/></svg>
-            </BarBtn>
-          </div>
+              }
+            }}
+            onBlur={() => {
+              const n = parseInt(pageInput) - firstPage
+              if (!isNaN(n) && n >= 0) goToPage(n)
+              else setPageInput(String(pageIdx + firstPage))
+            }}
+          />
+          <span style={{ fontSize: 14, opacity: 0.6 }}>/ {pages.length}</span>
+          <button className="reader-bar-btn" onClick={() => goToPage(pageIdx + 1)} disabled={pageIdx >= pages.length - 1} title="Sonraki">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+          <button className="reader-bar-btn" onClick={() => goToPage(pages.length - 1)} disabled={pageIdx >= pages.length - 1} title="Son Sayfa">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/></svg>
+          </button>
         </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 0 }}>
+          <button className="reader-bar-btn" onClick={() => { setShowSearch(true); setHighlightSearch(false) }} title="Sayfaya Git"
+            style={{ animation: highlightSearch ? 'pulse-glow 1.2s ease-in-out infinite' : 'none' }}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          </button>
+          <button className="reader-bar-btn" onClick={() => setShowThumbs(true)} title="Küçük Resimler">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+          </button>
+          <div className="reader-divider" />
+          <button className="reader-bar-btn" onClick={fullscreen} title="Tam Ekran">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+          </button>
+        </div>
+      </div>
 
       {/* Drawing panel (left side) */}
       <div style={{

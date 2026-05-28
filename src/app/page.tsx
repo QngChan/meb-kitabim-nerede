@@ -4,24 +4,41 @@ export default async function HomePage() {
   const { kategoriler } = getKatalog()
 
   return (
-    <div className="container">
-      <h1 className="section-title">Ders Kitapları</h1>
-      {kategoriler.length === 0 ? (
-        <p className="loading">Katalog henüz yüklenmedi. <code>npm run scrape</code> komutunu çalıştırın.</p>
-      ) : (
-        <div className="grid">
-          {kategoriler.map((k) => (
-            <a key={k.id} href={`/ders/${k.slug}`} className="card">
-              {k.icon_url ? (
-                <img src={k.icon_url} alt={k.baslik} loading="lazy" />
-              ) : (
-                <div style={{ width: 64, height: 64, margin: '0 auto 12px', background: '#e0e0e0', borderRadius: 8 }} />
-              )}
-              <h3>{k.baslik}</h3>
-            </a>
-          ))}
+    <>
+      <section className="hero">
+        <div className="container">
+          <h1>Kitabını Bul, Hemen Oku!</h1>
+          <p>MEB ders kitaplarına hızlı ve ücretsiz erişim. İstediğin dersi seç, kitabını bul, hemen okumaya başla.</p>
+          <div className="hero-search">
+            <svg className="hero-search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" placeholder="Ders, ünite veya kitap ara..." id="hero-search-input" />
+          </div>
         </div>
-      )}
-    </div>
+      </section>
+
+      <div className="container" style={{ marginTop: 32 }}>
+        <h2 className="section-title">Ders Kitapları</h2>
+        {kategoriler.length === 0 ? (
+          <div className="empty-state">
+            <div className="empty-icon">📚</div>
+            <h3>Katalog henüz yüklenmedi</h3>
+            <p><code>npm run scrape</code> komutunu çalıştırarak kataloğu oluşturabilirsiniz.</p>
+          </div>
+        ) : (
+          <div className="category-grid">
+            {kategoriler.map((k) => (
+              <a key={k.id} href={`/ders/${k.slug}`} className="category-card">
+                {k.icon_url ? (
+                  <img src={k.icon_url} alt={k.baslik} loading="lazy" />
+                ) : (
+                  <div className="icon-placeholder">{k.baslik.charAt(0)}</div>
+                )}
+                <h3>{k.baslik}</h3>
+              </a>
+            ))}
+          </div>
+        )}
+      </div>
+    </>
   )
 }
