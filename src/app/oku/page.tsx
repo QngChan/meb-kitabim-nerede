@@ -80,8 +80,12 @@ function ImageViewer({ iid, evvelcevapSlug }: { iid: string; evvelcevapSlug: str
   const [showShapes, setShowShapes] = useState(false)
   const [panMode, setPanMode] = useState(false)
   const [showThumbs, setShowThumbs] = useState(false)
+  const [showSearch, setShowSearch] = useState(false)
+  const [highlightSearch, setHighlightSearch] = useState(false)
   const [pageInput, setPageInput] = useState('1')
+  const searchRef = useRef<HTMLInputElement>(null)
   const startPt = useRef<{ x: number; y: number } | null>(null)
+  const pageChangeTimes = useRef<number[]>([])
   const naturalSize = useRef({ w: 0, h: 0 })
   const pageDrawings = useRef<Map<number, HTMLCanvasElement>>(new Map())
   const pageIdxRef = useRef(0)
@@ -193,6 +197,12 @@ function ImageViewer({ iid, evvelcevapSlug }: { iid: string; evvelcevapSlug: str
   useEffect(() => {
     setPageInput(String(pageIdx + firstPage))
   }, [pageIdx, firstPage])
+
+  useEffect(() => {
+    if (!highlightSearch) return
+    const timer = setTimeout(() => setHighlightSearch(false), 4000)
+    return () => clearTimeout(timer)
+  }, [highlightSearch])
 
   const fullscreen = () => {
     if (!document.fullscreenElement) {
@@ -310,6 +320,13 @@ function ImageViewer({ iid, evvelcevapSlug }: { iid: string; evvelcevapSlug: str
     saveCurrentDrawing()
     setPageIdx(newIdx)
     setShowThumbs(false)
+
+    const now = Date.now()
+    pageChangeTimes.current.push(now)
+    pageChangeTimes.current = pageChangeTimes.current.filter(t => now - t < 3000)
+    if (pageChangeTimes.current.length >= 3) {
+      setHighlightSearch(true)
+    }
   }, [pages.length, saveCurrentDrawing])
 
   const zoomTo = (newScale: number) => {
@@ -341,6 +358,13 @@ function ImageViewer({ iid, evvelcevapSlug }: { iid: string; evvelcevapSlug: str
 
   return (
     <>
+      <style>{`
+        @keyframes pulse-glow {
+          0%, 100% { box-shadow: 0 0 5px rgba(99,102,241,0.5); }
+          50% { box-shadow: 0 0 20px rgba(99,102,241,0.9), 0 0 40px rgba(99,102,241,0.4); }
+        }
+      `}</style>
+
       {penMode && (
         <div style={{
           position: 'fixed', top: 0, left: 0, right: 0, zIndex: 9999,
@@ -348,6 +372,39 @@ function ImageViewer({ iid, evvelcevapSlug }: { iid: string; evvelcevapSlug: str
           padding: '10px', fontSize: 13, fontWeight: 500,
         }}>
           ✏️ Kalem modundasınız. Çıkmak için araç çubuğundan kaleme tekrar basın.
+        </div>
+      )}
+
+      {showSearch && (
+        <div style={{
+          position: 'fixed', top: 50, left: '50%', transform: 'translateX(-50%)', zIndex: 9998,
+          background: '#fff', borderRadius: 10, boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
+          padding: '12px 16px', display: 'flex', gap: 8, alignItems: 'center', minWidth: 320,
+        }}>
+          <input ref={searchRef} type="text" placeholder="Sayfa numarası girin..."
+            onKeyDown={e => {
+              if (e.key !== 'Enter') return
+              const v = (e.target as HTMLInputElement).value
+              const n = parseInt(v) - firstPage
+              if (!isNaN(n) && n >= 0) goToPage(n)
+              setShowSearch(false)
+            }}
+            style={{ flex: 1, padding: '8px 12px', borderRadius: 6, border: '1px solid #ddd', fontSize: 14, outline: 'none' }}
+            autoFocus
+          />
+          <button onClick={() => {
+            if (!searchRef.current) return
+            const n = parseInt(searchRef.current.value) - firstPage
+            if (!isNaN(n) && n >= 0) goToPage(n)
+            setShowSearch(false)
+          }} style={{
+            padding: '8px 14px', borderRadius: 6, background: '#6366f1', color: '#fff',
+            border: 'none', cursor: 'pointer', fontWeight: 500, fontSize: 13,
+          }}>Git</button>
+          <button onClick={() => setShowSearch(false)} style={{
+            padding: '8px 10px', borderRadius: 6, background: '#f5f5f5', color: '#666',
+            border: '1px solid #ddd', cursor: 'pointer', fontSize: 16,
+          }}>✕</button>
         </div>
       )}
 
@@ -478,6 +535,16 @@ function ImageViewer({ iid, evvelcevapSlug }: { iid: string; evvelcevapSlug: str
 
           {/* Right group */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 0 }}>
+            <button onClick={() => { setShowSearch(true); setHighlightSearch(false) }} title="Sayfaya Git"
+              style={{
+                height: 44, width: 44, border: 'none', background: 'transparent',
+                cursor: 'pointer', color: '#fff', fontSize: 20, borderRadius: 0,
+                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                animation: highlightSearch ? 'pulse-glow 1.2s ease-in-out infinite' : 'none',
+                position: 'relative', zIndex: 1,
+              }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            </button>
             <BarBtn onClick={() => setShowThumbs(true)} title="Küçük Resimler">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
             </BarBtn>
