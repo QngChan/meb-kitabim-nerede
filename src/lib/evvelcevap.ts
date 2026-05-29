@@ -6,6 +6,7 @@ const MAP_PATH = path.join(process.cwd(), 'data', 'evvelcevap-map.json')
 interface EvvelcevapSubject {
   name: string
   slug: string | null
+  defaultPublisher?: string
 }
 
 interface EvvelcevapMap {
@@ -14,6 +15,8 @@ interface EvvelcevapMap {
 
 let mapCache: EvvelcevapMap | null = null
 
+const DEFAULT_PUBLISHER = 'meb'
+
 function getMap(): EvvelcevapMap {
   if (mapCache) return mapCache
   const raw = fs.readFileSync(MAP_PATH, 'utf-8')
@@ -21,15 +24,22 @@ function getMap(): EvvelcevapMap {
   return mapCache
 }
 
-export function getEvvelcevapSlug(kategoriBaslik: string): string | null {
+export function getEvvelcevapInfo(kategoriBaslik: string): { slug: string | null, publisher: string } {
   const map = getMap()
   const found = map.subjects.find(s => s.name === kategoriBaslik)
-  if (found?.slug) return found.slug
+
+  const publisher = found?.defaultPublisher || DEFAULT_PUBLISHER
+
+  if (found?.slug) return { slug: found.slug, publisher }
 
   const generated = turkceToSlug(kategoriBaslik)
     .replace(/^tc-/, 'tc-')
     .replace(/^t-c-/, 'tc-')
-  return generated || null
+  return { slug: generated || null, publisher }
+}
+
+export function getEvvelcevapSlug(kategoriBaslik: string): string | null {
+  return getEvvelcevapInfo(kategoriBaslik).slug
 }
 
 const SINIF_REGEX = /^(\d+)/

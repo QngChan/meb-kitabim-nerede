@@ -2,35 +2,41 @@
 
 import { useState } from "react"
 
+const DEFAULT_PUBLISHER = 'meb'
+
 export function buildEvvelcevapUrl(
   subjectSlug: string,
   sinifNo?: number | null,
-  sayfa?: number
+  sayfa?: number,
+  publisher?: string
 ): string {
+  const pub = publisher || DEFAULT_PUBLISHER
   if (sinifNo && sayfa) {
-    return `https://www.evvelcevap.com/${sinifNo}-sinif-${subjectSlug}-ders-kitabi-cevaplari-meb-sayfa-${sayfa}/`
+    return `https://www.evvelcevap.com/${sinifNo}-sinif-${subjectSlug}-ders-kitabi-cevaplari-${pub}-sayfa-${sayfa}/`
   }
   if (sinifNo) {
-    return `https://www.evvelcevap.com/${sinifNo}-sinif-${subjectSlug}-ders-kitabi-cevaplari-meb/`
+    return `https://www.evvelcevap.com/${sinifNo}-sinif-${subjectSlug}-ders-kitabi-cevaplari-${pub}/`
   }
   if (sayfa) {
-    return `https://www.evvelcevap.com/${subjectSlug}-ders-kitabi-cevaplari-meb-sayfa-${sayfa}/`
+    return `https://www.evvelcevap.com/${subjectSlug}-ders-kitabi-cevaplari-${pub}-sayfa-${sayfa}/`
   }
-  return `https://www.evvelcevap.com/${subjectSlug}-ders-kitabi-cevaplari-meb/`
+  return `https://www.evvelcevap.com/${subjectSlug}-ders-kitabi-cevaplari-${pub}/`
 }
 
 export default function CevapAnahtari({
   slug,
   sinifNo,
   sayfa,
+  publisher,
 }: {
   slug: string
   sinifNo?: number | null
   sayfa?: number
+  publisher?: string
 }) {
   const [toast, setToast] = useState(false)
 
-  const url = buildEvvelcevapUrl(slug, sinifNo, sayfa)
+  const url = buildEvvelcevapUrl(slug, sinifNo, sayfa, publisher)
 
   const pageNote = sayfa ? ` (Sayfa ${sayfa})` : ""
 

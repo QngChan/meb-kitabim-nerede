@@ -20,7 +20,7 @@ function ToolBtn({ active, onClick, title, children }: { active: boolean; onClic
   )
 }
 
-function OgmViewer({ url, evvelcevapSlug, sinifNo }: { url: string; evvelcevapSlug: string | null; sinifNo: number | null }) {
+function OgmViewer({ url, evvelcevapSlug, sinifNo, evvelcevapPublisher }: { url: string; evvelcevapSlug: string | null; sinifNo: number | null; evvelcevapPublisher?: string }) {
   const [loading, setLoading] = useState(true)
   const [timedOut, setTimedOut] = useState(false)
 
@@ -68,14 +68,14 @@ function OgmViewer({ url, evvelcevapSlug, sinifNo }: { url: string; evvelcevapSl
       )}
       {evvelcevapSlug && (
         <div style={{ position: 'fixed', bottom: 24, right: 24, zIndex: 1000 }}>
-          <CevapAnahtari slug={evvelcevapSlug} sinifNo={sinifNo} />
+          <CevapAnahtari slug={evvelcevapSlug} sinifNo={sinifNo} publisher={evvelcevapPublisher} />
         </div>
       )}
     </div>
   )
 }
 
-function ImageViewer({ iid, evvelcevapSlug, sinifNo }: { iid: string; evvelcevapSlug: string | null; sinifNo: number | null }) {
+function ImageViewer({ iid, evvelcevapSlug, sinifNo, evvelcevapPublisher }: { iid: string; evvelcevapSlug: string | null; sinifNo: number | null; evvelcevapPublisher?: string }) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const imgWrapRef = useRef<HTMLDivElement>(null)
   const drawCanvasRef = useRef<HTMLCanvasElement>(null)
@@ -596,7 +596,7 @@ function ImageViewer({ iid, evvelcevapSlug, sinifNo }: { iid: string; evvelcevap
 
       {evvelcevapSlug && (
         <div style={{ position: 'fixed', bottom: 68, right: 24, zIndex: 1000 }}>
-          <CevapAnahtari slug={evvelcevapSlug} sinifNo={sinifNo} sayfa={pageIdx + firstPage} />
+          <CevapAnahtari slug={evvelcevapSlug} sinifNo={sinifNo} sayfa={pageIdx + firstPage} publisher={evvelcevapPublisher} />
         </div>
       )}
     </>
@@ -609,12 +609,13 @@ function OkuContent() {
   const url = searchParams.get('url')
   const evvelcevapSlug = searchParams.get('c')
   const sinifNo = searchParams.get('s') ? Number(searchParams.get('s')) : null
+  const evvelcevapPublisher = searchParams.get('p') || undefined
 
   if (iid) {
-    return <ImageViewer iid={iid} evvelcevapSlug={evvelcevapSlug} sinifNo={sinifNo} />
+    return <ImageViewer iid={iid} evvelcevapSlug={evvelcevapSlug} sinifNo={sinifNo} evvelcevapPublisher={evvelcevapPublisher} />
   }
   if (url) {
-    return <OgmViewer url={url} evvelcevapSlug={evvelcevapSlug} sinifNo={sinifNo} />
+    return <OgmViewer url={url} evvelcevapSlug={evvelcevapSlug} sinifNo={sinifNo} evvelcevapPublisher={evvelcevapPublisher} />
   }
   return <p className="error">Geçersiz bağlantı. Lütfen bir kitap seçin.</p>
 }

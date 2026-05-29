@@ -1,5 +1,5 @@
 import { getKatalog } from '@/lib/db'
-import { getEvvelcevapSlug, getSinifNo } from '@/lib/evvelcevap'
+import { getEvvelcevapInfo, getSinifNo } from '@/lib/evvelcevap'
 import { notFound } from 'next/navigation'
 import CevapAnahtari from '@/app/cevap-anahtari'
 
@@ -19,7 +19,9 @@ export default async function KitapPage({ params }: { params: Promise<{ id: stri
   const sinif = siniflar.find(s => s.id === unite.sinif_id)
   const sinifNo = sinif ? Number(getSinifNo(sinif.baslik)) : null
 
-  const evvelcevapSlug = kategori ? getEvvelcevapSlug(kategori.baslik) : null
+  const evvelcevapInfo = kategori ? getEvvelcevapInfo(kategori.baslik) : null
+  const evvelcevapSlug = evvelcevapInfo?.slug ?? null
+  const evvelcevapPublisher = evvelcevapInfo?.publisher ?? null
 
   const interactiveUrl = uniteDosyalar.find(d => d.tur === 'interactive')?.url
   const pdfUrl = uniteDosyalar.find(d => d.tur === 'pdf')?.url
@@ -27,14 +29,15 @@ export default async function KitapPage({ params }: { params: Promise<{ id: stri
 
   const sinifParam = sinifNo ? `&s=${sinifNo}` : ''
   const slugParam = evvelcevapSlug ? `&c=${evvelcevapSlug}` : ''
+  const publisherParam = evvelcevapPublisher ? `&p=${evvelcevapPublisher}` : ''
 
   let okuHref = '#'
   let isImageViewer = false
   if (unite.id > 0) {
-    okuHref = `/oku?iid=${unite.id}${slugParam}${sinifParam}`
+    okuHref = `/oku?iid=${unite.id}${slugParam}${sinifParam}${publisherParam}`
     isImageViewer = true
   } else if (interactiveUrl) {
-    okuHref = `/oku?url=${encodeURIComponent(interactiveUrl)}${slugParam}${sinifParam}`
+    okuHref = `/oku?url=${encodeURIComponent(interactiveUrl)}${slugParam}${sinifParam}${publisherParam}`
   }
 
   return (
@@ -81,7 +84,7 @@ export default async function KitapPage({ params }: { params: Promise<{ id: stri
           )}
           {evvelcevapSlug && (
             <div style={{ marginTop: 16 }}>
-              <CevapAnahtari slug={evvelcevapSlug} sinifNo={sinifNo} />
+              <CevapAnahtari slug={evvelcevapSlug} sinifNo={sinifNo} publisher={evvelcevapPublisher ?? undefined} />
             </div>
           )}
         </div>
