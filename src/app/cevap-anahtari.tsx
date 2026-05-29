@@ -2,6 +2,23 @@
 
 import { useState } from "react"
 
+export function buildEvvelcevapUrl(
+  subjectSlug: string,
+  sinifNo?: number | null,
+  sayfa?: number
+): string {
+  if (sinifNo && sayfa) {
+    return `https://www.evvelcevap.com/${sinifNo}-sinif-${subjectSlug}-ders-kitabi-cevaplari-meb-sayfa-${sayfa}/`
+  }
+  if (sinifNo) {
+    return `https://www.evvelcevap.com/${sinifNo}-sinif-${subjectSlug}-ders-kitabi-cevaplari-meb/`
+  }
+  if (sayfa) {
+    return `https://www.evvelcevap.com/${subjectSlug}-ders-kitabi-cevaplari-meb-sayfa-${sayfa}/`
+  }
+  return `https://www.evvelcevap.com/${subjectSlug}-ders-kitabi-cevaplari-meb/`
+}
+
 export default function CevapAnahtari({
   slug,
   sinifNo,
@@ -13,16 +30,14 @@ export default function CevapAnahtari({
 }) {
   const [toast, setToast] = useState(false)
 
-  const gradeUrl = sinifNo
-    ? `https://www.evvelcevap.com/${sinifNo}-sinif-ders-ve-calisma-kitabi-cevaplari/`
-    : `https://www.evvelcevap.com/ders-ve-calisma-kitabi-cevaplari/`
+  const url = buildEvvelcevapUrl(slug, sinifNo, sayfa)
 
   const pageNote = sayfa ? ` (Sayfa ${sayfa})` : ""
 
   return (
     <>
       <a
-        href={gradeUrl}
+        href={url}
         target="_blank"
         rel="noopener noreferrer"
         onClick={() => { setToast(true); setTimeout(() => setToast(false), 3000) }}
@@ -43,9 +58,6 @@ export default function CevapAnahtari({
           background: '#222', color: '#fff', padding: '10px 20px', borderRadius: 8,
           fontSize: 14, zIndex: 9999, boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
         }}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{ marginRight: 8, verticalAlign: 'middle' }}>
-            <path d="M18 8A6 6 0 0 1 6 8c0-7 6-11 6-11s6 4 6 11"/><path d="M14 14a2 2 0 1 1-4 0"/>
-          </svg>
           Cevap anahtarı yeni sekmede açıldı
         </div>
       )}
