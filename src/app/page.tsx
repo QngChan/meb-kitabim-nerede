@@ -1,5 +1,6 @@
 import { getKatalog } from '@/lib/db'
 import SubjectIcon from './subject-icon'
+import SearchBar from './search-bar'
 
 export default async function HomePage() {
   const { kategoriler } = getKatalog()
@@ -10,10 +11,7 @@ export default async function HomePage() {
         <div className="container">
           <h1>Kitabını Bul, Hemen Oku!</h1>
           <p>MEB ders kitaplarına hızlı ve ücretsiz erişim. İstediğin dersi seç, kitabını bul, hemen okumaya başla.</p>
-          <div className="hero-search">
-            <svg className="hero-search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input type="text" placeholder="Ders, ünite veya kitap ara..." id="hero-search-input" />
-          </div>
+          <SearchBar variant="hero" />
         </div>
       </section>
 

@@ -2,6 +2,7 @@
 
 import { useSearchParams } from 'next/navigation'
 import { Suspense, useRef, useState, useEffect, useCallback } from 'react'
+import CevapAnahtari from '@/app/cevap-anahtari'
 
 type Tool = 'none' | 'pen' | 'eraser' | 'rectangle' | 'circle' | 'line'
 
@@ -20,25 +21,16 @@ function ToolBtn({ active, onClick, title, children }: { active: boolean; onClic
 }
 
 function OgmViewer({ url, evvelcevapSlug }: { url: string; evvelcevapSlug: string | null }) {
-  const cevapAnahtariUrl = evvelcevapSlug
-    ? `https://www.evvelcevap.com/${evvelcevapSlug}-kitabi-cevaplari/`
-    : null
-
   return (
     <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
       <div style={{ display: 'flex', alignItems: 'center', padding: '8px 16px', background: '#fff', borderBottom: '1px solid #ddd', gap: 12, flexShrink: 0 }}>
         <a href="javascript:history.back()" className="back-link" style={{ marginBottom: 0 }}>← Geri</a>
       </div>
       <iframe src={url} style={{ flex: 1, width: '100%', border: 'none' }} allowFullScreen />
-      {cevapAnahtariUrl && (
-        <a href={cevapAnahtariUrl} target="_blank" rel="noopener noreferrer" style={{
-          position: 'fixed', bottom: 24, right: 24, zIndex: 1000,
-          display: 'inline-flex', alignItems: 'center', gap: 6, padding: '10px 18px',
-          background: '#6366f1', color: '#fff', borderRadius: 8, textDecoration: 'none',
-          fontWeight: 600, fontSize: 14, boxShadow: '0 4px 12px rgba(99,102,241,0.4)',
-        }}>
-          Cevap Anahtarı
-        </a>
+      {evvelcevapSlug && (
+        <div style={{ position: 'fixed', bottom: 24, right: 24, zIndex: 1000 }}>
+          <CevapAnahtari slug={evvelcevapSlug} />
+        </div>
       )}
     </div>
   )
@@ -75,10 +67,6 @@ function ImageViewer({ iid, evvelcevapSlug }: { iid: string; evvelcevapSlug: str
   const naturalSize = useRef({ w: 0, h: 0 })
   const pageDrawings = useRef<Map<number, HTMLCanvasElement>>(new Map())
   const pageIdxRef = useRef(0)
-
-  const cevapAnahtariUrl = evvelcevapSlug
-    ? `https://www.evvelcevap.com/${evvelcevapSlug}-kitabi-cevaplari/`
-    : null
 
   const penMode = tool === 'pen' || tool === 'eraser'
   const shapeMode = tool === 'rectangle' || tool === 'circle' || tool === 'line'
@@ -567,15 +555,10 @@ function ImageViewer({ iid, evvelcevapSlug }: { iid: string; evvelcevapSlug: str
           </button>
         </div>
 
-      {cevapAnahtariUrl && (
-        <a href={cevapAnahtariUrl} target="_blank" rel="noopener noreferrer" style={{
-          position: 'fixed', bottom: 68, right: 24, zIndex: 1000,
-          display: 'inline-flex', alignItems: 'center', gap: 6, padding: '10px 18px',
-          background: '#6366f1', color: '#fff', borderRadius: 8, textDecoration: 'none',
-          fontWeight: 600, fontSize: 14, boxShadow: '0 4px 12px rgba(99,102,241,0.4)',
-        }}>
-          Cevap Anahtarı
-        </a>
+      {evvelcevapSlug && (
+        <div style={{ position: 'fixed', bottom: 68, right: 24, zIndex: 1000 }}>
+          <CevapAnahtari slug={evvelcevapSlug} />
+        </div>
       )}
     </>
   )

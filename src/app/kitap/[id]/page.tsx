@@ -1,6 +1,7 @@
 import { getKatalog } from '@/lib/db'
 import { getEvvelcevapSlug } from '@/lib/evvelcevap'
 import { notFound } from 'next/navigation'
+import CevapAnahtari from '@/app/cevap-anahtari'
 
 export default async function KitapPage({ params }: { params: Promise<{ id: string }> }) {
   const id = parseInt((await params).id)
@@ -72,10 +73,9 @@ export default async function KitapPage({ params }: { params: Promise<{ id: stri
             </div>
           )}
           {evvelcevapSlug && (
-            <a href={`https://www.evvelcevap.com/${evvelcevapSlug}-kitabi-cevaplari/`} target="_blank" rel="noopener noreferrer" className="btn btn-ghost" style={{ marginTop: 16, color: 'var(--orange)' }}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-              Cevap Anahtarı
-            </a>
+            <div style={{ marginTop: 16 }}>
+              <CevapAnahtari slug={evvelcevapSlug} />
+            </div>
           )}
         </div>
       </div>

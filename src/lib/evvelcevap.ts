@@ -24,7 +24,12 @@ function getMap(): EvvelcevapMap {
 export function getEvvelcevapSlug(kategoriBaslik: string): string | null {
   const map = getMap()
   const found = map.subjects.find(s => s.name === kategoriBaslik)
-  return found?.slug ?? null
+  if (found?.slug) return found.slug
+  
+  const generated = turkceToSlug(kategoriBaslik)
+    .replace(/^tc-/, 'tc-')
+    .replace(/^t-c-/, 'tc-')
+  return generated || null
 }
 
 const SINIF_REGEX = /^(\d+)/
