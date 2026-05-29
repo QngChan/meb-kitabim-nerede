@@ -20,23 +20,62 @@ function ToolBtn({ active, onClick, title, children }: { active: boolean; onClic
   )
 }
 
-function OgmViewer({ url, evvelcevapSlug }: { url: string; evvelcevapSlug: string | null }) {
+function OgmViewer({ url, evvelcevapSlug, sinifNo }: { url: string; evvelcevapSlug: string | null; sinifNo: number | null }) {
+  const [loading, setLoading] = useState(true)
+  const [timedOut, setTimedOut] = useState(false)
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (loading) setTimedOut(true)
+    }, 20000)
+    return () => clearTimeout(timer)
+  }, [loading])
+
   return (
     <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
       <div style={{ display: 'flex', alignItems: 'center', padding: '8px 16px', background: '#fff', borderBottom: '1px solid #ddd', gap: 12, flexShrink: 0 }}>
         <a href="javascript:history.back()" className="back-link" style={{ marginBottom: 0 }}>← Geri</a>
+        {loading && !timedOut && (
+          <span style={{ fontSize: 13, color: '#888' }}>Yükleniyor...</span>
+        )}
       </div>
-      <iframe src={url} style={{ flex: 1, width: '100%', border: 'none' }} allowFullScreen />
+      {timedOut ? (
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, padding: 40, color: '#666' }}>
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+            <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
+          </svg>
+          <p style={{ fontSize: 16, fontWeight: 500 }}>Kitap yüklenemedi</p>
+          <p style={{ fontSize: 14, textAlign: 'center', maxWidth: 400 }}>
+            OGM sunucusu yanıt vermedi. Kitabı doğrudan yeni sekmede açmayı deneyin.
+          </p>
+          <a href={url} target="_blank" rel="noopener noreferrer" className="btn btn-primary">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{ marginRight: 6 }}>
+              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+            </svg>
+            Yeni Sekmede Aç
+          </a>
+          <button onClick={() => window.history.back()} className="btn btn-outline" style={{ marginTop: 8 }}>
+            Geri Dön
+          </button>
+        </div>
+      ) : (
+        <iframe
+          src={url}
+          onLoad={() => setLoading(false)}
+          style={{ flex: 1, width: '100%', border: 'none' }}
+          allowFullScreen
+        />
+      )}
       {evvelcevapSlug && (
         <div style={{ position: 'fixed', bottom: 24, right: 24, zIndex: 1000 }}>
-          <CevapAnahtari slug={evvelcevapSlug} />
+          <CevapAnahtari slug={evvelcevapSlug} sinifNo={sinifNo} />
         </div>
       )}
     </div>
   )
 }
 
-function ImageViewer({ iid, evvelcevapSlug }: { iid: string; evvelcevapSlug: string | null }) {
+function ImageViewer({ iid, evvelcevapSlug, sinifNo }: { iid: string; evvelcevapSlug: string | null; sinifNo: number | null }) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const imgWrapRef = useRef<HTMLDivElement>(null)
   const drawCanvasRef = useRef<HTMLCanvasElement>(null)
@@ -557,7 +596,7 @@ function ImageViewer({ iid, evvelcevapSlug }: { iid: string; evvelcevapSlug: str
 
       {evvelcevapSlug && (
         <div style={{ position: 'fixed', bottom: 68, right: 24, zIndex: 1000 }}>
-          <CevapAnahtari slug={evvelcevapSlug} />
+          <CevapAnahtari slug={evvelcevapSlug} sinifNo={sinifNo} sayfa={pageIdx + firstPage} />
         </div>
       )}
     </>
@@ -569,12 +608,13 @@ function OkuContent() {
   const iid = searchParams.get('iid')
   const url = searchParams.get('url')
   const evvelcevapSlug = searchParams.get('c')
+  const sinifNo = searchParams.get('s') ? Number(searchParams.get('s')) : null
 
   if (iid) {
-    return <ImageViewer iid={iid} evvelcevapSlug={evvelcevapSlug} />
+    return <ImageViewer iid={iid} evvelcevapSlug={evvelcevapSlug} sinifNo={sinifNo} />
   }
   if (url) {
-    return <OgmViewer url={url} evvelcevapSlug={evvelcevapSlug} />
+    return <OgmViewer url={url} evvelcevapSlug={evvelcevapSlug} sinifNo={sinifNo} />
   }
   return <p className="error">Geçersiz bağlantı. Lütfen bir kitap seçin.</p>
 }

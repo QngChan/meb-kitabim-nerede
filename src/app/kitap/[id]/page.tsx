@@ -1,5 +1,5 @@
 import { getKatalog } from '@/lib/db'
-import { getEvvelcevapSlug } from '@/lib/evvelcevap'
+import { getEvvelcevapSlug, getSinifNo } from '@/lib/evvelcevap'
 import { notFound } from 'next/navigation'
 import CevapAnahtari from '@/app/cevap-anahtari'
 
@@ -7,7 +7,7 @@ export default async function KitapPage({ params }: { params: Promise<{ id: stri
   const id = parseInt((await params).id)
   if (isNaN(id)) notFound()
 
-  const { uniteler, dosyalar, dersler, kategoriler } = getKatalog()
+  const { uniteler, dosyalar, dersler, kategoriler, siniflar } = getKatalog()
 
   const unite = uniteler.find(u => u.id === id)
   if (!unite) notFound()
@@ -17,17 +17,22 @@ export default async function KitapPage({ params }: { params: Promise<{ id: stri
   const kategori = kategoriler.find(k => k.id === ders?.kategori_id)
   const evvelcevapSlug = kategori ? getEvvelcevapSlug(kategori.baslik) : null
 
+  const sinif = siniflar.find(s => s.id === unite.sinif_id)
+  const sinifNo = sinif ? Number(getSinifNo(sinif.baslik)) : null
+
   const interactiveUrl = uniteDosyalar.find(d => d.tur === 'interactive')?.url
   const pdfUrl = uniteDosyalar.find(d => d.tur === 'pdf')?.url
   const zipUrl = uniteDosyalar.find(d => d.tur === 'zip')?.url
 
+  const sinifParam = sinifNo ? `&s=${sinifNo}` : ''
+
   let okuHref = '#'
   let isImageViewer = false
   if (unite.id > 0) {
-    okuHref = `/oku?iid=${unite.id}${evvelcevapSlug ? `&c=${evvelcevapSlug}` : ''}`
+    okuHref = `/oku?iid=${unite.id}${evvelcevapSlug ? `&c=${evvelcevapSlug}` : ''}${sinifParam}`
     isImageViewer = true
   } else if (interactiveUrl) {
-    okuHref = `/oku?url=${encodeURIComponent(interactiveUrl)}${evvelcevapSlug ? `&c=${evvelcevapSlug}` : ''}`
+    okuHref = `/oku?url=${encodeURIComponent(interactiveUrl)}${evvelcevapSlug ? `&c=${evvelcevapSlug}` : ''}${sinifParam}`
   }
 
   return (
@@ -74,7 +79,7 @@ export default async function KitapPage({ params }: { params: Promise<{ id: stri
           )}
           {evvelcevapSlug && (
             <div style={{ marginTop: 16 }}>
-              <CevapAnahtari slug={evvelcevapSlug} />
+              <CevapAnahtari slug={evvelcevapSlug} sinifNo={sinifNo} />
             </div>
           )}
         </div>
