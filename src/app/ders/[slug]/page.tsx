@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { getKatalog } from '@/lib/db'
 import { notFound } from 'next/navigation'
+import SubjectIcon from '@/app/subject-icon'
 
 export default async function DersPage({
   params,
@@ -32,7 +33,10 @@ export default async function DersPage({
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg>
         Ana Sayfa
       </Link>
-      <h1 className="section-title">{ders.baslik}</h1>
+      <h1 className="section-title" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <SubjectIcon slug={slug} size={40} />
+        {ders.baslik}
+      </h1>
       {ilgiliSiniflar.length > 0 && (
         <div className="grade-tabs">
           <Link href={`/ders/${slug}`} className={`grade-tab${!sinifFiltre ? ' active' : ''}`}>Tümü</Link>

@@ -1,4 +1,5 @@
 import { getKatalog } from '@/lib/db'
+import SubjectIcon from './subject-icon'
 
 export default async function HomePage() {
   const { kategoriler } = getKatalog()
@@ -28,11 +29,7 @@ export default async function HomePage() {
           <div className="category-grid">
             {kategoriler.map((k) => (
               <a key={k.id} href={`/ders/${k.slug}`} className="category-card">
-                {k.icon_url ? (
-                  <img src={k.icon_url} alt={k.baslik} loading="lazy" />
-                ) : (
-                  <div className="icon-placeholder">{k.baslik.charAt(0)}</div>
-                )}
+                <SubjectIcon slug={k.slug} size={48} />
                 <h3>{k.baslik}</h3>
               </a>
             ))}
