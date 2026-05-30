@@ -46,8 +46,8 @@
   },
   "cografya": {
     "9": [
-      "gun-yayinlari",
       "meb",
+      "gun-yayinlari",
       "meb-yayinlari",
       "tutku-yayincilik"
     ],
@@ -57,8 +57,8 @@
       "yildirim-yayinlari"
     ],
     "11": [
-      "gun-yayinlari",
       "meb-yayinlari",
+      "gun-yayinlari",
       "yildirim-yayinlari"
     ],
     "12": [
@@ -79,22 +79,22 @@
       "pasifik-yayinlari"
     ],
     "10": [
-      "anka-yayinevi",
       "hecce-yayinlari",
+      "anka-yayinevi",
       "meb",
       "meb-yayinlari",
       "mesem",
       "miray-yayinlari"
     ],
     "11": [
+      "meb-yayinlari",
       "anka-yayinevi",
       "aydin-yayinlari",
-      "meb-yayinlari",
       "sdr-dikey-yayinlari"
     ],
     "12": [
-      "meb",
       "meb-yayinlari",
+      "meb",
       "melis-yayinlari",
       "ordinat-yayinlari",
       "tutku-yayinlari"
@@ -108,14 +108,14 @@
       "sdr-dikey-yayincilik"
     ],
     "10": [
+      "meb-yayinlari",
       "ata-yayinlari",
       "ekoyay-yayinlari",
-      "meb",
-      "meb-yayinlari"
+      "meb"
     ],
     "11": [
-      "anka-yayinevi",
       "ata-yayinlari",
+      "anka-yayinevi",
       "meb",
       "meb-yayinlari"
     ],
@@ -126,22 +126,22 @@
   },
   "kimya": {
     "9": [
-      "evrensel-iletisim-yayinlari",
       "hecce-yayincilik",
+      "evrensel-iletisim-yayinlari",
       "meb-yayinlari",
       "pasifik-yayinlari"
     ],
     "10": [
-      "anadol-yayincilik",
       "ata-yayinlari",
+      "anadol-yayincilik",
       "basak-yayinlari",
       "meb-yayinlari",
       "pasifik-yayinlari",
       "sdr-dikey-yayinlari"
     ],
     "11": [
-      "e-kare-yayinlari",
-      "sdr-dikey-yayinlari"
+      "sdr-dikey-yayinlari",
+      "e-kare-yayinlari"
     ],
     "12": [
       "anka-yayinlari",
@@ -150,9 +150,9 @@
   },
   "biyoloji": {
     "9": [
+      "meb-yayinlari",
       "ez-de-yayincilik",
       "meb",
-      "meb-yayinlari",
       "tutku-yayincilik"
     ],
     "10": [
@@ -162,8 +162,8 @@
       "tuna-matbaacilik-yayinlari"
     ],
     "11": [
-      "anadol-yayincilik",
       "meb-yayinlari",
+      "anadol-yayincilik",
       "tuna-yayinlari",
       "tutku-yayinlari"
     ],
@@ -172,7 +172,10 @@
       "sdr-dikey-yayinlari"
     ]
   },
-  "felsefe": {},
+  "felsefe": {
+    "10": ["meb"],
+    "11": ["meb"]
+  },
   "ingilizce": {
     "9": [
       "erkad-yayincilik",
@@ -185,8 +188,8 @@
       "pasifik-yayinlari"
     ],
     "11": [
-      "cem-yayinlari",
-      "yildirim-yayinlari"
+      "yildirim-yayinlari",
+      "cem-yayinlari"
     ],
     "12": [
       "meb-yayinlari"
