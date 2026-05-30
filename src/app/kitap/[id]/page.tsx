@@ -19,9 +19,10 @@ export default async function KitapPage({ params }: { params: Promise<{ id: stri
   const sinif = siniflar.find(s => s.id === unite.sinif_id)
   const sinifNo = sinif ? Number(getSinifNo(sinif.baslik)) : null
 
-  const evvelcevapInfo = kategori ? getEvvelcevapInfo(kategori.baslik) : null
+  const evvelcevapInfo = kategori ? getEvvelcevapInfo(kategori.baslik, sinifNo) : null
   const evvelcevapSlug = evvelcevapInfo?.slug ?? null
   const evvelcevapPublisher = evvelcevapInfo?.publisher ?? null
+  const evvelcevapHasPage = evvelcevapInfo?.hasPage ?? false
 
   const interactiveUrl = uniteDosyalar.find(d => d.tur === 'interactive')?.url
   const pdfUrl = uniteDosyalar.find(d => d.tur === 'pdf')?.url
@@ -30,14 +31,15 @@ export default async function KitapPage({ params }: { params: Promise<{ id: stri
   const sinifParam = sinifNo ? `&s=${sinifNo}` : ''
   const slugParam = evvelcevapSlug ? `&c=${evvelcevapSlug}` : ''
   const publisherParam = evvelcevapPublisher ? `&p=${evvelcevapPublisher}` : ''
+  const hasPageParam = evvelcevapHasPage ? '&h=1' : ''
 
   let okuHref = '#'
   let isImageViewer = false
   if (unite.id > 0) {
-    okuHref = `/oku?iid=${unite.id}${slugParam}${sinifParam}${publisherParam}`
+    okuHref = `/oku?iid=${unite.id}${slugParam}${sinifParam}${publisherParam}${hasPageParam}`
     isImageViewer = true
   } else if (interactiveUrl) {
-    okuHref = `/oku?url=${encodeURIComponent(interactiveUrl)}${slugParam}${sinifParam}${publisherParam}`
+    okuHref = `/oku?url=${encodeURIComponent(interactiveUrl)}${slugParam}${sinifParam}${publisherParam}${hasPageParam}`
   }
 
   return (
@@ -82,7 +84,7 @@ export default async function KitapPage({ params }: { params: Promise<{ id: stri
               <p>Bu ünite için henüz dosya yüklenmemiş.</p>
             </div>
           )}
-          {evvelcevapSlug && (
+          {evvelcevapSlug && evvelcevapHasPage && (
             <div style={{ marginTop: 16 }}>
               <CevapAnahtari slug={evvelcevapSlug} sinifNo={sinifNo} publisher={evvelcevapPublisher ?? undefined} />
             </div>

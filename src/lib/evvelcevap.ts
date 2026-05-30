@@ -2,6 +2,7 @@ import fs from 'fs'
 import path from 'path'
 
 const MAP_PATH = path.join(process.cwd(), 'data', 'evvelcevap-map.json')
+const PUBLISHERS_PATH = path.join(process.cwd(), 'data', 'evvelcevap-publishers.json')
 
 interface EvvelcevapSubject {
   name: string
@@ -13,7 +14,14 @@ interface EvvelcevapMap {
   subjects: EvvelcevapSubject[]
 }
 
+interface EvvelcevapPublishers {
+  [slug: string]: {
+    [grade: string]: string[]
+  }
+}
+
 let mapCache: EvvelcevapMap | null = null
+let publishersCache: EvvelcevapPublishers | null = null
 
 const DEFAULT_PUBLISHER = 'meb'
 
@@ -24,18 +32,50 @@ function getMap(): EvvelcevapMap {
   return mapCache
 }
 
-export function getEvvelcevapInfo(kategoriBaslik: string): { slug: string | null, publisher: string } {
+function getPublishers(): EvvelcevapPublishers {
+  if (publishersCache) return publishersCache
+  const raw = fs.readFileSync(PUBLISHERS_PATH, 'utf-8')
+  publishersCache = JSON.parse(raw) as EvvelcevapPublishers
+  return publishersCache
+}
+
+export function getEvvelcevapInfo(kategoriBaslik: string, sinifNo?: number | null): { slug: string | null, publisher: string, hasPage: boolean } {
   const map = getMap()
   const found = map.subjects.find(s => s.name === kategoriBaslik)
 
-  const publisher = found?.defaultPublisher || DEFAULT_PUBLISHER
+  let slug = found?.slug ?? null
+  if (!slug) {
+    const generated = turkceToSlug(kategoriBaslik)
+      .replace(/^tc-/, 'tc-')
+      .replace(/^t-c-/, 'tc-')
+    slug = generated || null
+  }
 
-  if (found?.slug) return { slug: found.slug, publisher }
+  if (!slug) return { slug: null, publisher: DEFAULT_PUBLISHER, hasPage: false }
 
-  const generated = turkceToSlug(kategoriBaslik)
-    .replace(/^tc-/, 'tc-')
-    .replace(/^t-c-/, 'tc-')
-  return { slug: generated || null, publisher }
+  const defaultPublisher = found?.defaultPublisher || DEFAULT_PUBLISHER
+  const publishers = getPublishers()
+  const gradePublishers = publishers[slug]
+
+  let publisher = defaultPublisher
+  let hasPage = true
+
+  if (gradePublishers === undefined) {
+    hasPage = false
+  } else if (sinifNo) {
+    const gradeKey = String(sinifNo)
+    if (gradePublishers[gradeKey]?.length) {
+      publisher = gradePublishers[gradeKey][0]
+    } else {
+      hasPage = false
+    }
+  } else {
+    if (Object.keys(gradePublishers).length === 0) {
+      hasPage = false
+    }
+  }
+
+  return { slug, publisher, hasPage }
 }
 
 export function getEvvelcevapSlug(kategoriBaslik: string): string | null {

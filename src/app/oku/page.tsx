@@ -20,7 +20,7 @@ function ToolBtn({ active, onClick, title, children }: { active: boolean; onClic
   )
 }
 
-function OgmViewer({ url, evvelcevapSlug, sinifNo, evvelcevapPublisher }: { url: string; evvelcevapSlug: string | null; sinifNo: number | null; evvelcevapPublisher?: string }) {
+function OgmViewer({ url, evvelcevapSlug, sinifNo, evvelcevapPublisher, evvelcevapHasPage }: { url: string; evvelcevapSlug: string | null; sinifNo: number | null; evvelcevapPublisher?: string; evvelcevapHasPage?: boolean }) {
   const [loading, setLoading] = useState(true)
   const [timedOut, setTimedOut] = useState(false)
 
@@ -66,7 +66,7 @@ function OgmViewer({ url, evvelcevapSlug, sinifNo, evvelcevapPublisher }: { url:
           allowFullScreen
         />
       )}
-      {evvelcevapSlug && (
+      {evvelcevapSlug && evvelcevapHasPage && (
         <div style={{ position: 'fixed', bottom: 24, right: 24, zIndex: 1000 }}>
           <CevapAnahtari slug={evvelcevapSlug} sinifNo={sinifNo} publisher={evvelcevapPublisher} />
         </div>
@@ -75,7 +75,7 @@ function OgmViewer({ url, evvelcevapSlug, sinifNo, evvelcevapPublisher }: { url:
   )
 }
 
-function ImageViewer({ iid, evvelcevapSlug, sinifNo, evvelcevapPublisher }: { iid: string; evvelcevapSlug: string | null; sinifNo: number | null; evvelcevapPublisher?: string }) {
+function ImageViewer({ iid, evvelcevapSlug, sinifNo, evvelcevapPublisher, evvelcevapHasPage }: { iid: string; evvelcevapSlug: string | null; sinifNo: number | null; evvelcevapPublisher?: string; evvelcevapHasPage?: boolean }) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const imgWrapRef = useRef<HTMLDivElement>(null)
   const drawCanvasRef = useRef<HTMLCanvasElement>(null)
@@ -594,7 +594,7 @@ function ImageViewer({ iid, evvelcevapSlug, sinifNo, evvelcevapPublisher }: { ii
           </button>
         </div>
 
-      {evvelcevapSlug && (
+      {evvelcevapSlug && evvelcevapHasPage && (
         <div style={{ position: 'fixed', bottom: 68, right: 24, zIndex: 1000 }}>
           <CevapAnahtari slug={evvelcevapSlug} sinifNo={sinifNo} sayfa={pageIdx + firstPage} publisher={evvelcevapPublisher} />
         </div>
@@ -610,12 +610,13 @@ function OkuContent() {
   const evvelcevapSlug = searchParams.get('c')
   const sinifNo = searchParams.get('s') ? Number(searchParams.get('s')) : null
   const evvelcevapPublisher = searchParams.get('p') || undefined
+  const evvelcevapHasPage = searchParams.get('h') === '1'
 
   if (iid) {
-    return <ImageViewer iid={iid} evvelcevapSlug={evvelcevapSlug} sinifNo={sinifNo} evvelcevapPublisher={evvelcevapPublisher} />
+    return <ImageViewer iid={iid} evvelcevapSlug={evvelcevapSlug} sinifNo={sinifNo} evvelcevapPublisher={evvelcevapPublisher} evvelcevapHasPage={evvelcevapHasPage} />
   }
   if (url) {
-    return <OgmViewer url={url} evvelcevapSlug={evvelcevapSlug} sinifNo={sinifNo} evvelcevapPublisher={evvelcevapPublisher} />
+    return <OgmViewer url={url} evvelcevapSlug={evvelcevapSlug} sinifNo={sinifNo} evvelcevapPublisher={evvelcevapPublisher} evvelcevapHasPage={evvelcevapHasPage} />
   }
   return <p className="error">Geçersiz bağlantı. Lütfen bir kitap seçin.</p>
 }
